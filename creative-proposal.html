@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>栖序 | 创意文档</title>
+  <style>
+    :root {
+      --bg: #07111f;
+      --bg-soft: #0d1830;
+      --panel: rgba(10, 18, 34, 0.76);
+      --panel-strong: rgba(14, 24, 44, 0.92);
+      --line: rgba(154, 191, 255, 0.14);
+      --text: #f4f7ff;
+      --muted: #9aa9ca;
+      --teal: #7ee7d3;
+      --blue: #87bfff;
+      --peach: #ffb996;
+      --pink: #ff8fb6;
+      --shadow: 0 28px 90px rgba(0, 0, 0, 0.34);
+      --radius-xl: 34px;
+      --radius-lg: 26px;
+      --radius-md: 18px;
+      --max: 1160px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: "PingFang SC", "Microsoft YaHei UI", "Noto Sans SC", sans-serif;
+      line-height: 1.7;
+      background:
+        radial-gradient(circle at 14% 10%, rgba(126, 231, 211, 0.16), transparent 30%),
+        radial-gradient(circle at 88% 18%, rgba(135, 191, 255, 0.17), transparent 28%),
+        radial-gradient(circle at 75% 78%, rgba(255, 185, 150, 0.12), transparent 24%),
+        linear-gradient(180deg, #06111e 0%, #08101c 30%, #091426 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.22;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+      background-size: 32px 32px;
+      mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.92), transparent 88%);
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image: radial-gradient(rgba(255, 255, 255, 0.08) 0.6px, transparent 0.6px);
+      background-size: 12px 12px;
+      opacity: 0.05;
+      mix-blend-mode: soft-light;
+    }
+
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(110px);
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.28;
+    }
+
+    .orb-a {
+      width: 380px;
+      height: 380px;
+      top: -120px;
+      left: -120px;
+      background: rgba(126, 231, 211, 0.35);
+    }
+
+    .orb-b {
+      width: 420px;
+      height: 420px;
+      right: -160px;
+      top: 120px;
+      background: rgba(135, 191, 255, 0.28);
+    }
+
+    .orb-c {
+      width: 300px;
+      height: 300px;
+      right: 12%;
+      bottom: -110px;
+      background: rgba(255, 143, 182, 0.22);
+    }
+
+    .wrap {
+      width: min(calc(100% - 32px), var(--max));
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero {
+      padding: 38px 0 26px;
+    }
+
+    .hero-shell {
+      position: relative;
+      overflow: hidden;
+      padding: 34px;
+      border: 1px solid var(--line);
+      border-radius: 36px;
+      background:
+        linear-gradient(140deg, rgba(12, 22, 41, 0.96), rgba(9, 15, 30, 0.84)),
+        var(--panel-strong);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .hero-shell::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 78% 14%, rgba(135, 191, 255, 0.14), transparent 24%),
+        radial-gradient(circle at 18% 0%, rgba(126, 231, 211, 0.12), transparent 22%);
+      pointer-events: none;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      position: relative;
+      z-index: 1;
+    }
+
+    .badge,
+    .micro {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--muted);
+    }
+
+    .badge::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, var(--teal), var(--blue));
+      box-shadow: 0 0 12px rgba(126, 231, 211, 0.8);
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.08fr) minmax(320px, 0.92fr);
+      gap: 26px;
+      margin-top: 28px;
+      align-items: stretch;
+      position: relative;
+      z-index: 1;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    p {
+      margin: 0;
+    }
+
+    .hero-copy h1 {
+      margin-top: 18px;
+      font-size: clamp(38px, 5vw, 72px);
+      line-height: 1.02;
+      letter-spacing: -0.045em;
+    }
+
+    .hero-copy .lead {
+      margin-top: 18px;
+      max-width: 700px;
+      font-size: 18px;
+      color: var(--muted);
+    }
+
+    .hero-quote {
+      margin-top: 24px;
+      padding: 18px 20px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.04);
+      color: #dfe8ff;
+      font-size: 17px;
+    }
+
+    .hero-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 22px;
+    }
+
+    .tag {
+      padding: 9px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .mock-panel {
+      position: relative;
+      overflow: hidden;
+      min-height: 440px;
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: 30px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.018)),
+        rgba(8, 17, 32, 0.88);
+      box-shadow: var(--shadow);
+    }
+
+    .mock-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: rgba(244, 247, 255, 0.76);
+      font-size: 13px;
+      margin-bottom: 14px;
+    }
+
+    .desktop {
+      position: relative;
+      min-height: 298px;
+      padding: 18px;
+      border-radius: 24px;
+      background:
+        radial-gradient(circle at 82% 18%, rgba(126, 231, 211, 0.16), transparent 24%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.01));
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .desktop-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      max-width: 63%;
+    }
+
+    .file {
+      padding: 10px 8px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.05);
+      text-align: center;
+      font-size: 12px;
+      color: rgba(244, 247, 255, 0.88);
+    }
+
+    .pet {
+      position: absolute;
+      right: 20px;
+      top: 56px;
+      width: 92px;
+      height: 92px;
+      border-radius: 28px;
+      background:
+        radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.38), transparent 18%),
+        linear-gradient(160deg, rgba(255, 185, 150, 0.88), rgba(255, 143, 182, 0.78));
+      box-shadow:
+        0 18px 44px rgba(255, 143, 182, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.24);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: floaty 4s ease-in-out infinite;
+    }
+
+    .pet::before,
+    .pet::after {
+      content: "";
+      position: absolute;
+      top: -11px;
+      width: 26px;
+      height: 26px;
+      border-radius: 10px 10px 4px 4px;
+      background: rgba(255, 171, 149, 0.92);
+      transform: rotate(18deg);
+    }
+
+    .pet::before {
+      left: 15px;
+    }
+
+    .pet::after {
+      right: 15px;
+      transform: rotate(-18deg);
+    }
+
+    .pet-face {
+      position: relative;
+      width: 40px;
+      height: 22px;
+    }
+
+    .pet-face span {
+      position: absolute;
+      top: 2px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #4a2434;
+    }
+
+    .pet-face span:first-child {
+      left: 7px;
+    }
+
+    .pet-face span:last-child {
+      right: 7px;
+    }
+
+    .pet-face::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      width: 12px;
+      height: 7px;
+      border-bottom: 3px solid #4a2434;
+      border-radius: 0 0 12px 12px;
+      transform: translateX(-50%);
+    }
+
+    .bubble {
+      position: absolute;
+      right: 18px;
+      top: 162px;
+      width: 212px;
+      padding: 14px 15px;
+      border-radius: 18px 18px 6px 18px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(17, 27, 48, 0.94);
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .bubble strong {
+      display: block;
+      color: var(--text);
+      margin-bottom: 4px;
+      font-size: 15px;
+    }
+
+    .dock {
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      bottom: 16px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      padding: 13px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(14px);
+    }
+
+    .dock span {
+      width: 34px;
+      height: 34px;
+      border-radius: 11px;
+      background: linear-gradient(180deg, rgba(135, 191, 255, 0.42), rgba(126, 231, 211, 0.22));
+    }
+
+    .side-note {
+      margin-top: 16px;
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    main {
+      padding-bottom: 72px;
+    }
+
+    section {
+      margin-top: 18px;
+    }
+
+    .section-card {
+      padding: 28px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xl);
+      background: linear-gradient(180deg, rgba(13, 24, 48, 0.84), rgba(9, 16, 30, 0.78));
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .section-head {
+      margin-bottom: 18px;
+    }
+
+    .kicker {
+      display: inline-flex;
+      margin-bottom: 12px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      color: var(--blue);
+      background: rgba(135, 191, 255, 0.08);
+      border: 1px solid rgba(135, 191, 255, 0.16);
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .section-head h2 {
+      font-size: clamp(28px, 3vw, 42px);
+      line-height: 1.08;
+      letter-spacing: -0.03em;
+    }
+
+    .section-head p {
+      margin-top: 10px;
+      max-width: 760px;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .grid-2,
+    .grid-3,
+    .grid-4 {
+      display: grid;
+      gap: 16px;
+    }
+
+    .grid-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .grid-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .grid-4 {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .card {
+      padding: 22px;
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.04);
+      transition: transform 0.28s ease, border-color 0.28s ease, background 0.28s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(135, 191, 255, 0.22);
+      background: rgba(255, 255, 255, 0.055);
+    }
+
+    .card h3 {
+      margin-bottom: 10px;
+      font-size: 20px;
+    }
+
+    .card p,
+    .card li {
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .icon {
+      width: 46px;
+      height: 46px;
+      margin-bottom: 16px;
+      border-radius: 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .icon.peach {
+      background: rgba(255, 185, 150, 0.12);
+    }
+
+    .icon.blue {
+      background: rgba(135, 191, 255, 0.12);
+    }
+
+    .icon.teal {
+      background: rgba(126, 231, 211, 0.12);
+    }
+
+    .split-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 340px;
+      gap: 16px;
+      align-items: stretch;
+    }
+
+    .concept-panel {
+      padding: 24px;
+      border-radius: 26px;
+      background:
+        linear-gradient(135deg, rgba(126, 231, 211, 0.08), rgba(135, 191, 255, 0.06)),
+        rgba(255, 255, 255, 0.035);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .concept-panel strong {
+      display: block;
+      font-size: 25px;
+      line-height: 1.35;
+      margin-bottom: 12px;
+    }
+
+    .pill-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
+    .pill {
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .stack {
+      display: grid;
+      gap: 12px;
+    }
+
+    .mini {
+      padding: 18px;
+      border-radius: 22px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .mini small {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+
+    .mini strong {
+      display: block;
+      font-size: 19px;
+      line-height: 1.4;
+    }
+
+    .mvp-box {
+      padding: 24px;
+      border-radius: 26px;
+      border: 1px solid rgba(126, 231, 211, 0.16);
+      background:
+        linear-gradient(180deg, rgba(126, 231, 211, 0.09), rgba(255, 255, 255, 0.03)),
+        rgba(12, 22, 42, 0.74);
+    }
+
+    .mvp-box strong {
+      display: block;
+      margin-bottom: 10px;
+      font-size: 22px;
+    }
+
+    ul.clean {
+      margin: 14px 0 0;
+      padding-left: 18px;
+    }
+
+    ul.clean li + li {
+      margin-top: 8px;
+    }
+
+    .flow {
+      display: grid;
+      gap: 14px;
+    }
+
+    .flow-item {
+      display: grid;
+      grid-template-columns: 82px 1fr;
+      gap: 16px;
+      padding: 18px;
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .step {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 68px;
+      border-radius: 20px;
+      background: rgba(135, 191, 255, 0.12);
+      color: var(--blue);
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .compare-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .compare-card {
+      padding: 20px;
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .compare-card h3 {
+      margin-bottom: 12px;
+      font-size: 18px;
+    }
+
+    .compare-card ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .compare-card li + li {
+      margin-top: 8px;
+    }
+
+    .accent-line {
+      margin-top: 16px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(135, 191, 255, 0.42), transparent);
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .stat {
+      padding: 22px;
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .stat .label {
+      display: inline-flex;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .label.good {
+      color: var(--teal);
+      background: rgba(126, 231, 211, 0.1);
+    }
+
+    .label.mid {
+      color: var(--peach);
+      background: rgba(255, 185, 150, 0.1);
+    }
+
+    .stat h3 {
+      font-size: 22px;
+      margin-bottom: 8px;
+    }
+
+    .finale {
+      padding: 30px;
+      border-radius: 30px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background:
+        linear-gradient(135deg, rgba(255, 143, 182, 0.09), rgba(135, 191, 255, 0.08)),
+        rgba(12, 20, 37, 0.78);
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+
+    .finale strong {
+      display: block;
+      font-size: clamp(24px, 3vw, 34px);
+      line-height: 1.35;
+      margin-bottom: 14px;
+    }
+
+    .finale p {
+      max-width: 860px;
+      margin: 0 auto;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(22px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+
+    .reveal.in {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @keyframes floaty {
+      0%, 100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-8px);
+      }
+    }
+
+    @media (max-width: 1000px) {
+      .hero-grid,
+      .split-hero,
+      .grid-2,
+      .grid-3,
+      .grid-4,
+      .compare-grid,
+      .stat-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .desktop-grid {
+        max-width: 100%;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .hero-shell,
+      .section-card,
+      .finale {
+        padding: 22px;
+      }
+
+      .flow-item {
+        grid-template-columns: 1fr;
+      }
+
+      .pet {
+        width: 82px;
+        height: 82px;
+      }
+
+      .bubble {
+        position: static;
+        width: auto;
+        margin-top: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="orb orb-a"></div>
+  <div class="orb orb-b"></div>
+  <div class="orb orb-c"></div>
+
+  <div class="wrap">
+    <header class="hero reveal">
+      <div class="hero-shell">
+        <div class="topbar">
+          <div class="badge">Concept Document</div>
+          <div class="micro">灵感参考自桌面美化生态，不依赖第三方闭源接口</div>
+        </div>
+
+        <div class="hero-grid">
+          <div class="hero-copy">
+            <h1>栖序</h1>
+            <p class="lead">
+              一款运行在 Windows 桌面的常驻式陪伴整理助手概念。
+              它把桌面氛围、桌宠陪伴与半自动文件整理融合在一起，
+              它不是一个只会把文件分门别类的工具，也不是一个只负责卖萌的桌宠。
+              它更像一个生活在桌面上的小管家，用桌宠建立陪伴感，用 AI 生成整理建议，用可预览、可撤销的方式长期维持桌面的舒适与秩序。
+            </p>
+
+            <div class="hero-quote">
+              让桌面既能安放情绪，也能容纳秩序。
+            </div>
+
+            <div class="hero-tags">
+              <span class="tag">桌面氛围</span>
+              <span class="tag">桌宠陪伴</span>
+              <span class="tag">半自动整理</span>
+              <span class="tag">可预览 / 可撤销</span>
+              <span class="tag">场景模式</span>
+            </div>
+          </div>
+
+          <div class="mock-panel">
+            <div class="mock-head">
+              <span>娱乐模式</span>
+              <span>19:30</span>
+            </div>
+
+            <div class="desktop">
+              <div class="desktop-grid">
+                <div class="file">截图 145.png</div>
+                <div class="file">压缩包.zip</div>
+                <div class="file">安装包.exe</div>
+                <div class="file">新建文档.docx</div>
+                <div class="file">录屏.mp4</div>
+                <div class="file">素材.psd</div>
+                <div class="file">快捷方式</div>
+                <div class="file">临时笔记</div>
+              </div>
+
+              <div class="pet">
+                <div class="pet-face">
+                  <span></span>
+                  <span></span>
+                </div>
+              </div>
+
+              <div class="bubble">
+                <strong>要不要顺手整理一下？</strong>
+                我先帮你预览一版整理方案，只动那些更像临时文件的内容。
+              </div>
+
+              <div class="dock">
+                <span></span><span></span><span></span><span></span><span></span><span></span>
+              </div>
+            </div>
+
+            <div class="side-note">
+              主入口是沉浸式桌面体验，真正的落点是低打扰、可信赖的整理闭环。
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="reveal">
+        <div class="section-card">
+          <div class="section-head">
+            <span class="kicker">Core Idea</span>
+            <h2>这不是三个功能的拼接，而是一条完整体验线</h2>
+            <p>它从桌面氛围切入，通过桌宠建立情绪连接，再把文件整理放进自然交互里，让用户不是在“清理桌面”，而是在“和自己的桌面伙伴一起维持秩序”。</p>
+          </div>
+
+          <div class="split-hero">
+            <div class="concept-panel">
+              <strong>从“隐藏桌面文件”升级为“真正管理桌面状态”</strong>
+              <p>
+                灵感来自 MyDockFinder 这类桌面美化工具带来的沉浸感，但它们更多解决“看起来整洁”的问题，
+                没有真正处理桌面文件越积越乱的长期困境。这个方案保留视觉氛围，同时补上文件整理和情绪反馈的闭环。
+              </p>
+
+              <div class="pill-row">
+                <span class="pill">桌面更好看</span>
+                <span class="pill">整理不打断</span>
+                <span class="pill">互动更有温度</span>
+              </div>
+            </div>
+
+            <div class="stack">
+              <div class="mini">
+                <small>作品名称</small>
+                <strong>栖序</strong>
+              </div>
+              <div class="mini">
+                <small>副标题</small>
+                <strong>陪伴式桌面整理助手</strong>
+              </div>
+              <div class="mini">
+                <small>产品形态</small>
+                <strong>Windows 桌面常驻应用</strong>
+              </div>
+              <div class="mini">
+                <small>体验原则</small>
+                <strong>低打扰、可控、可信</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="reveal">
+        <div class="section-card">
+          <div class="section-head">
+            <span class="kicker">Problem</span>
+            <h2>为什么这个创意成立</h2>
+            <p>用户不是不会整理文件，而是不想在正在学习、办公或娱乐的时候，被一个冷冰冰的管理工具打断。</p>
+          </div>
+
+          <div class="grid-3">
+            <div class="card">
+              <div class="icon peach">01</div>
+              <h3>视觉整洁是假整洁</h3>
+              <p>很多桌面美化工具能隐藏图标、统一风格，但文件并没有真的被管理，时间久了桌面还是会继续堆积。</p>
+            </div>
+            <div class="card">
+              <div class="icon blue">02</div>
+              <h3>整理动作太打断体验</h3>
+              <p>传统文件管理需要手动分类、拖拽和找目录。用户知道该整理，却总会把这件事拖到更晚。</p>
+            </div>
+            <div class="card">
+              <div class="icon teal">03</div>
+              <h3>工具有用，但没有情绪价值</h3>
+              <p>大多数整理软件偏效率逻辑，缺少陪伴感，也很难建立长期使用习惯，整体气质偏冷、偏工具化。</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="reveal">
+        <div class="section-card">
+          <div class="section-head">
+            <span class="kicker">Users & Form</span>
+            <h2>它是给谁用的，又会以什么形式存在</h2>
+            <p>栖序不是面向“所有用户”的泛泛工具，而是面向一类很具体的桌面使用者。</p>
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+              <h3>目标用户</h3>
+              <ul class="clean">
+                <li>长期在 Windows 桌面堆积截图、安装包、压缩包和临时文档的年轻用户。</li>
+                <li>在学习、办公、娱乐之间频繁切换，同时又在意桌面氛围感的人。</li>
+                <li>不喜欢复杂文件系统，但希望桌面长期保持清爽、可用和有陪伴感的人。</li>
+              </ul>
+            </div>
+
+            <div class="card">
+              <h3>产品形态</h3>
+              <ul class="clean">
+                <li>一款运行在 Windows 桌面的常驻式整理助手。</li>
+                <li>以桌宠为交互入口，以 AI 为建议引擎，以桌面文件管理为核心能力。</li>
+                <li>它既不是网页工具，也不是单纯的桌面美化插件，而是直接服务于桌面环境的轻量桌面应用。</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="reveal">
+        <div class="section-card">
+          <div class="section-head">
+            <span class="kicker">Solution</span>
+            <h2>收缩后的 MVP 更可信</h2>
+            <p>不做“大而全的桌面生态”，只做“能打动人、能演示、也能落地”的最小闭环。</p>
+          </div>
+
+          <div class="grid-2">
+            <div class="mvp-box">
+              <strong>MVP 一句话</strong>
+              <p>当桌面开始变乱时，桌宠以低打扰方式发起整理建议，用户预览后一键整理，并可随时撤销。</p>
+              <ul class="clean">
+                <li>桌宠负责提醒、反馈和陪伴，不承担复杂管理操作。</li>
+                <li>AI 负责识别、判断时机和生成建议，不直接接管用户文件。</li>
+                <li>整理过程默认先预览，再执行，最后可撤销。</li>
+              </ul>
+            </div>
+
+            <div class="card">
+              <h3>明确不做什么</h3>
+              <ul class="clean">
+                <li>不做完整桌面生态系统。</li>
+                <li>不依赖 MyDockFinder 的开放接口或联动能力。</li>
+                <li>不做强侵入式全自动整理。</li>
+                <li>不做重聊天型桌宠和复杂美化引擎。</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="accent-line"></div>
+
+          <div class="grid-3" style="margin-top: 16px;">
+            <div class="card">
+              <div class="icon blue">氛</div>
+              <h3>桌面氛围层</h3>
+              <p>负责让产品先“好看”，建立沉浸式第一印象，让用户先感知到这是一个有生命感的桌面空间。</p>
+            </div>
+            <div class="card">
+              <div class="icon peach">伴</div>
+              <h3>桌宠陪伴层</h3>
+              <p>负责把整理动作变成自然互动，用提醒、鼓励和完成反馈承载情绪价值。</p>
+            </div>
+            <div class="card">
+              <div class="icon teal">整</div>
+              <h3>AI 整理层</h3>
+              <p>负责识别桌面杂乱趋势、生成可预览方案，并按不同场景调整整理策略。</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="reveal">
+        <div class="section-card">
+          <div class="section-head">
+            <span class="kicker">Feature Set</span>
+            <h2>核心能力只保留最必要的六件事</h2>
+            <p>每个能力都直接服务于“轻量、可信、有陪伴感”的桌面整理体验。</p>
+          </div>
+
+          <div class="grid-3">
+            <div class="card">
+              <h3>桌面文件识别</h3>
+              <p>识别截图、文档、压缩包、安装包、快捷方式和临时素材，形成可理解的整理候选集。</p>
+            </div>
+            <div class="card">
+              <h3>杂乱趋势判断</h3>
+              <p>根据文件数量、类型分布和堆积趋势判断是否该提醒，避免频繁打扰用户。</p>
+            </div>
+            <div class="card">
+              <h3>预览式整理面板</h3>
+              <p>清楚展示“哪些文件将被移到哪里”，先给结果，再让用户决定是否执行。</p>
+            </div>
+            <div class="card">
+              <h3>一键整理与撤销</h3>
+              <p>整理完成后保留恢复路径，解决“AI 乱动我文件”的心理门槛。</p>
+            </div>
+            <div class="card">
+              <h3>桌宠轻互动</h3>
+              <p>桌宠负责问候、提醒、夸夸和反馈，是情绪入口，也是产品记忆点。</p>
+            </div>
+            <div class="card">
+              <h3>场景策略切换</h3>
+              <p>娱乐、学习、办公模式下调整提醒频率和整理规则，让模式切换真正影响产品行为。</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="reveal">
+        <div class="section-card">
+          <div class="section-head">
+            <span class="kicker">Core Flow</span>
+            <h2>核心体验闭环</h2>
+            <p>这条流程足够直观，也能把“陪伴感”和“整理价值”同时讲清楚。</p>
+          </div>
+
+          <div class="flow">
+            <div class="flow-item">
+              <div class="step">Step 01</div>
+              <div>
+                <h3>桌面开始变乱</h3>
+                <p>截图、安装包、临时文件逐渐堆积，系统判断桌面进入轻度杂乱状态。</p>
+              </div>
+            </div>
+            <div class="flow-item">
+              <div class="step">Step 02</div>
+              <div>
+                <h3>桌宠轻量提醒</h3>
+                <p>桌宠出现一句自然提示，例如“桌面有点热闹，要不要我帮你顺手整理一下？”</p>
+              </div>
+            </div>
+            <div class="flow-item">
+              <div class="step">Step 03</div>
+              <div>
+                <h3>展示可预览方案</h3>
+                <p>AI 给出整理建议，明确哪些内容会进入截图区、安装包区或临时素材区。</p>
+              </div>
+            </div>
+            <div class="flow-item">
+              <div class="step">Step 04</div>
+              <div>
+                <h3>一键整理并建立正反馈</h3>
+                <p>用户确认后完成整理，桌宠给出拟人化反馈，同时保留撤销入口，形成安全感和成就感。</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="reveal">
+        <div class="section-card">
+          <div class="section-head">
+            <span class="kicker">Difference</span>
+            <h2>和现有产品相比，你真正新在哪</h2>
+            <p>不是把功能越做越多，而是把不同产品里各自割裂的价值，重新组合成一条更自然的体验线。</p>
+          </div>
+
+          <div class="compare-grid">
+            <div class="compare-card">
+              <h3>桌面美化工具</h3>
+              <ul>
+                <li>优点是氛围强、视觉统一。</li>
+                <li>缺点是更像“隐藏文件”，不是真正管理文件。</li>
+              </ul>
+            </div>
+            <div class="compare-card">
+              <h3>传统整理工具</h3>
+              <ul>
+                <li>优点是分类和归档能力明确。</li>
+                <li>缺点是工具感强、打扰感重、没有情绪连接。</li>
+              </ul>
+            </div>
+            <div class="compare-card">
+              <h3>普通桌宠应用</h3>
+              <ul>
+                <li>优点是互动轻松、有陪伴感。</li>
+                <li>缺点是往往停留在装饰层，没有真实管理价值。</li>
+              </ul>
+            </div>
+            <div class="compare-card">
+              <h3>本方案</h3>
+              <ul>
+                <li>桌面氛围负责吸引人。</li>
+                <li>桌宠负责建立情绪连接。</li>
+                <li>AI 整理负责把价值真正落到桌面秩序上。</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="reveal">
+        <div class="section-card">
+          <div class="section-head">
+            <span class="kicker">Value</span>
+            <h2>它能带来的实际帮助</h2>
+            <p>不夸大“改变一切”，只回答一个更现实的问题：用了栖序之后，用户到底会得到什么。</p>
+          </div>
+
+          <div class="grid-3">
+            <div class="card">
+              <h3>减少手动整理成本</h3>
+              <p>用户不需要频繁自己分类和拖拽文件，栖序会在合适时机给出整理建议，把桌面维护变成顺手动作。</p>
+            </div>
+            <div class="card">
+              <h3>降低桌面失控感</h3>
+              <p>当截图、安装包和临时文件开始堆积时，用户不再只能“忍着乱”，而是能用更低压力的方式逐步恢复秩序。</p>
+            </div>
+            <div class="card">
+              <h3>让桌面更适合长期使用</h3>
+              <p>它不仅让桌面更清爽，也让整理过程更柔和、更有温度，适合长期留在桌面上陪伴用户使用。</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="reveal">
+        <div class="section-card">
+          <div class="section-head">
+            <span class="kicker">Feasibility</span>
+            <h2>落地判断</h2>
+            <p>把范围收缩后，这个项目更像一个可以做出来、也能持续迭代的桌面产品原型。</p>
+          </div>
+
+          <div class="stat-grid">
+            <div class="stat">
+              <div class="label good">较高</div>
+              <h3>概念验证</h3>
+              <p>适合通过“整理前后对比 + 桌宠互动”快速完成产品价值验证，体验路径清晰、展示也直观。</p>
+            </div>
+            <div class="stat">
+              <div class="label good">中高</div>
+              <h3>MVP 开发</h3>
+              <p>桌面文件扫描、分类建议、移动、撤销和悬浮层交互都具备实现基础，关键在于控制范围。</p>
+            </div>
+            <div class="stat">
+              <div class="label mid">中等</div>
+              <h3>长期产品化</h3>
+              <p>未来仍要继续解决误判率、信任感和提醒频率，但作为一个产品原型，它已经具备清晰的成立基础。</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="reveal">
+        <div class="finale">
+          <strong>这不是一个“更会分类文件”的工具，而是一个更懂桌面生活感的 AI 助手。</strong>
+          <p>
+            栖序真正想做的，不是替用户接管桌面，而是用更温柔的方式帮助用户维持一个长期舒适、有氛围、也不失秩序的数字生活空间。
+          </p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("in");
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12 });
+
+    document.querySelectorAll(".reveal").forEach((element) => observer.observe(element));
+  </script>
+</body>
+</html>
