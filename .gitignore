@@ -4,3 +4,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 package-lock.json
+_srv.js
+_shot.py
+temp.html
+*.png
+!wallpaper.png
