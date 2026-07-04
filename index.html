@@ -1,0 +1,2675 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>栖序 — 陪伴式桌面整理助手 Demo</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap');
+
+  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+  :root {
+    --bg-base: #0f0f1a;
+    --glass-bg: rgba(255,255,255,0.04);
+    --glass-border: rgba(255,255,255,0.10);
+    --glass-highlight: rgba(255,255,255,0.03);
+    --text-primary: #e8e6f0;
+    --text-secondary: #9895aa;
+    --accent-peach: #f9a892;
+    --accent-teal: #5ec4b6;
+    --accent-blue: #7eb8da;
+    --accent-purple: #b8a0e8;
+    --accent-rose: #e8a0c0;
+    --accent-amber: #e8c97e;
+    --shadow-soft: 0 2px 24px rgba(0,0,0,0.35);
+    --shadow-card: 0 8px 40px rgba(0,0,0,0.45);
+    --radius-sm: 10px;
+    --radius-md: 16px;
+    --radius-lg: 24px;
+    --font-body: 'Noto Sans SC', system-ui, sans-serif;
+    --mode-grad-start: #1a1a3e;
+    --mode-grad-mid: #1a2840;
+    --mode-grad-end: #1a1a2e;
+    --mode-accent: var(--accent-rose);
+    --mode-pet-hair: #f2c9c0;
+    --mode-pet-eye: #e87090;
+    --mode-pet-eye-dark: #c04870;
+    --mode-pet-dress: #fff0ec;
+    --mode-pet-dress-dark: #fde0d8;
+    --mode-pet-bow: #f9a892;
+    --mode-pet-bow-dark: #e07a5f;
+    --spritesheet: url('perlica_spritesheet.webp');
+    --frame-w: 180px;
+    --frame-h: 216px;
+    --sprite-cols: 8;
+    --sprite-rows: 9;
+    --pet-perlica: url('perlica_spritesheet.webp');
+    --pet-guga: url('guga_spritesheet.webp');
+    --pet-miyabi: url('miyabi_spritesheet.webp');
+    --transition-smooth: 0.6s cubic-bezier(0.25,0.1,0.25,1);
+    --icon-screenshot: #5ec4b6;
+    --icon-doc: #e8c97e;
+    --icon-archive: #b8a0e8;
+    --icon-installer: #6dd49e;
+    --icon-video: #e8a0c0;
+    --icon-temp: #c9a96e;
+    --icon-design: #6ec6d8;
+    --icon-shortcut: #9895aa;
+  }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg-base);
+    color: var(--text-primary);
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: default;
+  }
+
+  /* ============ LOADING SCREEN ============ */
+  #loadingScreen {
+    position: fixed; inset: 0; z-index: 9999;
+    background: radial-gradient(ellipse at center, #1a1a2e 0%, #0f0f1a 100%);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 24px; transition: opacity 0.6s ease, visibility 0.6s ease;
+  }
+  #loadingScreen.hide { opacity: 0; visibility: hidden; pointer-events: none; }
+  .loading-logo {
+    font-size: 36px; font-weight: 700; letter-spacing: 4px;
+    background: linear-gradient(135deg, var(--accent-peach), var(--accent-purple));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: logoBreath 2s ease-in-out infinite;
+  }
+  @keyframes logoBreath {
+    0%, 100% { transform: scale(1); opacity: 0.85; }
+    50% { transform: scale(1.05); opacity: 1; }
+  }
+  .loading-spinner {
+    width: 44px; height: 44px; border-radius: 50%;
+    border: 3px solid rgba(255,255,255,0.1);
+    border-top-color: var(--accent-peach);
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-bar {
+    width: 200px; height: 4px; border-radius: 2px;
+    background: rgba(255,255,255,0.08); overflow: hidden;
+  }
+  .loading-bar-fill {
+    height: 100%; width: 0%; border-radius: 2px;
+    background: linear-gradient(90deg, var(--accent-peach), var(--accent-purple));
+    transition: width 0.3s ease;
+  }
+  .loading-text {
+    font-size: 12px; color: var(--text-secondary); letter-spacing: 1px;
+  }
+
+  /* ============ INTRO MODAL ============ */
+  #introModal {
+    position: fixed; inset: 0; z-index: 9000;
+    background: rgba(8,8,16,0.6); backdrop-filter: blur(8px);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; visibility: hidden;
+    transition: opacity 0.4s ease, visibility 0.4s ease;
+  }
+  #introModal.show { opacity: 1; visibility: visible; }
+  .intro-card {
+    width: 480px; max-width: 92vw; max-height: 84vh; overflow-y: auto;
+    background: rgba(22,22,38,0.96); backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card); padding: 28px 32px;
+    transform: translateY(20px) scale(0.96);
+    transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  #introModal.show .intro-card { transform: translateY(0) scale(1); }
+  .intro-title {
+    font-size: 22px; font-weight: 700; margin-bottom: 6px;
+    background: linear-gradient(135deg, var(--accent-peach), var(--accent-purple));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .intro-sub { font-size: 13px; color: var(--text-secondary); margin-bottom: 20px; }
+  .intro-section { margin-bottom: 16px; }
+  .intro-section h4 {
+    font-size: 14px; font-weight: 500; color: var(--accent-peach);
+    margin-bottom: 6px; display: flex; align-items: center; gap: 8px;
+  }
+  .intro-section h4 .intro-icon {
+    width: 22px; height: 22px; border-radius: 6px;
+    background: rgba(249,168,146,0.15); display: inline-flex;
+    align-items: center; justify-content: center; font-size: 13px;
+  }
+  .intro-section p { font-size: 13px; line-height: 1.6; color: var(--text-primary); padding-left: 30px; }
+  .intro-section p kbd {
+    display: inline-block; padding: 1px 7px; margin: 0 2px;
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 4px; font-size: 11px; font-family: monospace; color: var(--accent-blue);
+  }
+  .intro-actions { margin-top: 22px; display: flex; justify-content: flex-end; gap: 10px; }
+  .intro-btn {
+    padding: 9px 22px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500;
+    cursor: pointer; border: none; transition: all 0.2s ease;
+  }
+  .intro-btn.primary {
+    background: linear-gradient(135deg, var(--accent-peach), var(--accent-rose)); color: #fff;
+  }
+  .intro-btn.primary:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(249,168,146,0.4); }
+
+  /* ============ PET SWITCHER ============ */
+  #petSwitcherModal {
+    position: fixed; inset: 0; z-index: 9000;
+    background: rgba(8,8,16,0.6); backdrop-filter: blur(8px);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+  }
+  #petSwitcherModal.show { opacity: 1; visibility: visible; }
+  .pet-switcher-card {
+    width: 520px; max-width: 92vw;
+    background: rgba(22,22,38,0.96); backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card); padding: 24px 28px;
+    transform: translateY(20px) scale(0.96);
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  #petSwitcherModal.show .pet-switcher-card { transform: translateY(0) scale(1); }
+  .pet-switcher-title {
+    font-size: 18px; font-weight: 700; margin-bottom: 16px;
+    background: linear-gradient(135deg, var(--accent-peach), var(--accent-purple));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .pet-switcher-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
+  }
+  .pet-card {
+    background: rgba(255,255,255,0.04); border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md); padding: 12px; cursor: pointer;
+    transition: all 0.25s ease; text-align: center;
+  }
+  .pet-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--accent-peach);
+    background: rgba(249,168,146,0.08);
+  }
+  .pet-card.active {
+    border-color: var(--accent-peach);
+    background: rgba(249,168,146,0.12);
+    box-shadow: 0 0 0 2px rgba(249,168,146,0.3);
+  }
+  .pet-card-preview {
+    width: 80px; height: 100px; margin: 0 auto 8px;
+    background-image: var(--pet-sprite);
+    background-size: calc(80px * 8) calc(100px * 9);
+    background-repeat: no-repeat;
+    image-rendering: pixelated;
+    animation: pet-preview-idle 1.2s steps(6, end) infinite;
+  }
+  @keyframes pet-preview-idle {
+    from { background-position: 0 0; }
+    to { background-position: calc(80px * -6) 0; }
+  }
+  .pet-card-name { font-size: 14px; font-weight: 500; color: var(--text-primary); margin-bottom: 2px; }
+  .pet-card-desc { font-size: 11px; color: var(--text-secondary); }
+  .pet-switcher-actions { margin-top: 18px; display: flex; justify-content: flex-end; }
+  .pet-switcher-btn {
+    padding: 7px 20px; border-radius: var(--radius-sm); font-size: 13px;
+    background: rgba(255,255,255,0.08); color: var(--text-primary);
+    border: 1px solid var(--glass-border); cursor: pointer; transition: all 0.2s ease;
+  }
+  .pet-switcher-btn:hover { background: rgba(255,255,255,0.14); }
+
+  /* ============ DESKTOP LAYER ============ */
+  .desktop {
+    position: fixed; inset: 0; z-index: 0;
+    background:
+      linear-gradient(160deg, rgba(10,10,22,0.22) 0%, rgba(12,16,28,0.16) 50%, rgba(10,10,20,0.22) 100%),
+      url('wallpaper.png') center / cover no-repeat;
+    transition: background var(--transition-smooth);
+  }
+  .desktop::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background:
+      radial-gradient(ellipse 70% 60% at 20% 30%, rgba(249,168,146,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 50% at 75% 70%, rgba(126,184,218,0.06) 0%, transparent 60%),
+      radial-gradient(circle 300px at 50% 40%, rgba(184,160,232,0.05) 0%, transparent 100%);
+    transition: background var(--transition-smooth);
+  }
+  .desktop::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    opacity: 0.5;
+  }
+
+  /* Frostituted glass reflection strips */
+  .glass-strip {
+    position: fixed; pointer-events: none; z-index: 0;
+  }
+  .glass-strip-1 {
+    top: 15%; left: -5%; width: 35%; height: 55%;
+    background: linear-gradient(135deg, rgba(255,255,255,0.02) 0%, transparent 60%);
+    border-radius: 40% 60% 30% 70%;
+    filter: blur(40px);
+  }
+  .glass-strip-2 {
+    bottom: 10%; right: -8%; width: 40%; height: 50%;
+    background: linear-gradient(225deg, rgba(255,255,255,0.015) 0%, transparent 55%);
+    border-radius: 50% 40% 60% 30%;
+    filter: blur(50px);
+  }
+
+  /* Glass texture overlay card */
+  .glass-card {
+    position: fixed;
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-soft), inset 0 1px 0 rgba(255,255,255,0.04);
+    z-index: 10;
+  }
+
+  /* ============ TOP BAR ============ */
+  .topbar {
+    position: fixed; top:0; left:0; right:0; height:44px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 20px; z-index: 100;
+    background: rgba(0,0,0,0.22);
+    backdrop-filter: blur(24px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    font-size: 13px; color: var(--text-secondary);
+  }
+  .topbar-left { display: flex; align-items: center; gap: 12px; }
+  .topbar-right { display: flex; align-items: center; gap: 14px; }
+  .topbar-logo { font-weight: 700; color: var(--text-primary); font-size: 15px; letter-spacing: 0.5px; }
+  #topbarStatusText { font-size: 11px; color: var(--mode-accent); font-weight: 500; transition: color var(--transition-smooth); }
+  .topbar-clean { font-weight: 600; }
+  .topbar-clean.good { color: #6dd49e; }
+  .topbar-clean.warn { color: #e8c97e; }
+  .topbar-bar { width: 60px; height: 3px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; }
+  .topbar-bar-fill { height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--mode-accent), var(--accent-teal)); transition: width 0.6s ease; }
+  .topbar-today { font-size: 11px; color: var(--text-secondary); opacity: 0.85; letter-spacing: 0.2px; }
+
+  /* ============ DESKTOP AREA ============ */
+  .desktop-area { position: fixed; inset: 44px 0 64px 0; z-index: 1; }
+
+  /* ============ FILE ICONS ============ */
+  .files-layer { position: absolute; inset: 10px 10px 60px 10px; }
+
+  .file-icon {
+    position: absolute; display: flex; flex-direction: column; align-items: center; gap: 5px;
+    cursor: grab; transition: transform 0.2s ease, box-shadow 0.2s ease;
+    z-index: 2; border-radius: 12px; padding: 7px 6px 10px; width: 82px;
+  }
+  .file-icon:active { cursor: grabbing; }
+  .file-icon:hover { background: rgba(255,255,255,0.06); z-index: 10; }
+  .file-icon.dragging { opacity: 0.5; transform: scale(0.95); z-index: 50; }
+  .file-icon.drag-over-target { background: rgba(255,255,255,0.04); box-shadow: 0 0 0 2px var(--mode-accent); }
+
+  /* Organized state — compact mobile-style icons */
+  .file-icon.organized {
+    width: 58px; padding: 4px 2px 4px; gap: 2px; border-radius: 10px;
+  }
+  .file-icon.organized .file-icon-inner {
+    width: 34px; height: 34px; border-radius: 9px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  }
+  .file-icon.organized .file-icon-inner svg { width: 18px; height: 18px; stroke-width: 1.5; }
+  .file-icon.organized .file-name {
+    font-size: 8px; max-width: 54px; text-shadow: none;
+  }
+  .file-icon.organized .file-type-tag,
+  .file-icon.organized .file-meta { display: none; }
+
+  .file-icon-inner {
+    width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center;
+    justify-content: center; position: relative;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+    transition: all 0.6s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .file-icon-inner svg { width: 28px; height: 28px; stroke: currentColor; stroke-width: 1.6; fill: none; }
+
+  .file-name {
+    font-size: 10.5px; color: var(--text-primary); text-align: center; line-height: 1.3;
+    max-width: 78px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  }
+  .file-type-tag {
+    font-size: 8.5px; padding: 2px 6px; border-radius: 7px;
+    background: rgba(0,0,0,0.3); color: var(--text-secondary); letter-spacing: 0.3px;
+  }
+  .file-meta { font-size: 8.5px; color: var(--text-secondary); opacity: 0.7; }
+
+  /* File type icon colors */
+  .ft-screenshot .file-icon-inner { background: linear-gradient(135deg, #2a6b7c, #1a4a58); color: #5ec4b6; }
+  .ft-doc .file-icon-inner { background: linear-gradient(135deg, #6b5020, #4a3615); color: #e8c97e; }
+  .ft-archive .file-icon-inner { background: linear-gradient(135deg, #3e2370, #2a1850); color: #b8a0e8; }
+  .ft-installer .file-icon-inner { background: linear-gradient(135deg, #1f6b3a, #154a28); color: #6dd49e; }
+  .ft-video .file-icon-inner { background: linear-gradient(135deg, #6b2040, #4a1530); color: #e8a0c0; }
+  .ft-temp .file-icon-inner { background: linear-gradient(135deg, #6b5020, #4a3615); color: #c9a96e; }
+  .ft-design .file-icon-inner { background: linear-gradient(135deg, #20506b, #15364a); color: #6ec6d8; }
+  .ft-shortcut .file-icon-inner { background: linear-gradient(135deg, #303040, #202030); color: #9895aa; }
+
+  /* Organized group containers — 统一固定尺寸（像手机收纳格） */
+  .file-group {
+    position: absolute;
+    width: 220px; height: 170px;
+    overflow: hidden;
+    z-index: 3; /* 高于 filesLayer（auto），确保 badge/label 可点击 */
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 20px; padding: 24px 14px 14px;
+    opacity: 0; transform: scale(0.92);
+    transition: left 0.45s cubic-bezier(0.34,1.56,0.64,1),
+                top 0.45s cubic-bezier(0.34,1.56,0.64,1),
+                opacity 0.55s cubic-bezier(0.34,1.56,0.64,1),
+                transform 0.55s cubic-bezier(0.34,1.56,0.64,1);
+    pointer-events: none;
+    background: rgba(255,255,255,0.025);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    box-sizing: border-box;
+  }
+  .file-group::after {
+    content: ''; position: absolute; inset: 0; border-radius: 20px; pointer-events: none;
+    background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, transparent 40%);
+  }
+  .file-group.show { opacity: 1; transform: scale(1); pointer-events: auto; }
+  .file-group.drag-over {
+    border-color: var(--mode-accent);
+    background: rgba(255,255,255,0.05);
+    box-shadow: 0 0 20px rgba(249,168,146,0.15);
+  }
+  /* 标签放在容器内部顶部，避免被 overflow:hidden 裁切 */
+  .file-group-label {
+    position: absolute; top: 6px; left: 14px; z-index: 4;
+    font-size: 10px; font-weight: 600;
+    color: var(--text-secondary);
+    background: rgba(0,0,0,0.35);
+    padding: 2px 8px; border-radius: 6px;
+    white-space: nowrap;
+    letter-spacing: 0.3px; cursor: pointer;
+    pointer-events: auto;
+    user-select: none;
+    backdrop-filter: blur(6px);
+  }
+  .file-group-label:hover { color: var(--text-primary); background: rgba(0,0,0,0.5); }
+  .file-group-label.editing { background: rgba(0,0,0,0.6); color: var(--text-primary); outline: 1px solid var(--mode-accent); cursor: text; user-select: text; }
+  /* +N 角标：点击展开 modal 查看全部 */
+  .file-group-more {
+    position: absolute; right: 10px; bottom: 10px; z-index: 5;
+    min-width: 30px; height: 22px; padding: 0 8px;
+    display: none; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600; color: var(--text-primary);
+    background: rgba(0,0,0,0.55); backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.12); border-radius: 11px;
+    cursor: pointer; transition: all 0.2s ease;
+  }
+  .file-group-more:hover { background: var(--mode-accent); color: #fff; transform: scale(1.08); }
+  .file-group-more.show { display: flex; }
+
+  /* ============ GROUP EXPAND MODAL (手机文件夹式) ============ */
+  .group-expand-overlay {
+    position: fixed; inset: 0; z-index: 300;
+    background: rgba(0,0,0,0.55); backdrop-filter: blur(8px);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .group-expand-overlay.show { opacity: 1; pointer-events: auto; }
+  .group-expand-card {
+    width: min(720px, 92vw); max-height: 80vh;
+    background: rgba(18,18,36,0.96); backdrop-filter: blur(30px);
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 24px;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+    display: flex; flex-direction: column;
+    transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    overflow: hidden;
+  }
+  .group-expand-overlay.show .group-expand-card { transform: scale(1); }
+  .group-expand-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 24px; border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .group-expand-title { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+  .group-expand-count { font-size: 12px; color: var(--text-secondary); margin-left: 10px; }
+  .group-expand-close {
+    width: 28px; height: 28px; border-radius: 8px; border: none; cursor: pointer;
+    background: rgba(255,255,255,0.06); color: var(--text-secondary);
+    font-size: 16px; line-height: 1; transition: all 0.2s ease;
+  }
+  .group-expand-close:hover { background: rgba(255,255,255,0.14); color: var(--text-primary); }
+  .group-expand-body {
+    flex: 1; overflow-y: auto; padding: 20px 24px 24px;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 14px 8px; align-content: start;
+  }
+  .group-expand-body::-webkit-scrollbar { width: 6px; }
+  .group-expand-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+  /* 展开面板里的图标：从原 .file-icon 复制显示，但禁用拖拽与原 click */
+  .group-expand-body .file-icon {
+    position: relative !important; left: auto !important; top: auto !important;
+    cursor: pointer;
+  }
+
+  /* ============ DOCK ============ */
+  .dock {
+    position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%);
+    display: flex; align-items: flex-end; gap: 8px; padding: 10px 18px 8px;
+    background: rgba(255,255,255,0.04);
+    backdrop-filter: blur(40px) saturate(140%); -webkit-backdrop-filter: blur(40px) saturate(140%);
+    border-radius: 22px;
+    border: 1px solid rgba(255,255,255,0.06);
+    box-shadow: 0 4px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04);
+    z-index: 200;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+  }
+  .dock::after {
+    content: ''; position: absolute; inset: 0; border-radius: 22px; pointer-events: none;
+    background: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, transparent 50%);
+  }
+  .dock.drag-over {
+    border-color: var(--mode-accent);
+    box-shadow: 0 0 40px var(--mode-pet-glow), inset 0 1px 0 rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.09);
+  }
+  .dock-icon {
+    width: 42px; height: 42px; border-radius: 13px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    position: relative; background: transparent;
+  }
+  .dock-icon svg { width: 20px; height: 20px; stroke: rgba(255,255,255,0.6); stroke-width: 1.5; fill: none; transition: all 0.3s ease; }
+  .dock-icon:hover { transform: translateY(-8px) scale(1.12); }
+  .dock-icon:hover svg { stroke: var(--text-primary); }
+  .dock-icon.active svg { stroke: var(--mode-accent); stroke-width: 1.8; }
+  .dock-icon.active::after {
+    content: ''; position: absolute; bottom: -3px; width: 4px; height: 4px;
+    border-radius: 50%; background: var(--mode-accent);
+  }
+  /* 通用 hover 标签 */
+  .dock-icon[data-tip]::before {
+    content: attr(data-tip);
+    position: absolute; top: -30px; left: 50%; transform: translateX(-50%) translateY(4px);
+    font-size: 11px; line-height: 1; padding: 5px 9px; border-radius: 8px;
+    background: rgba(22,22,42,0.95); color: var(--text-primary); white-space: nowrap;
+    opacity: 0; transition: all 0.25s ease; pointer-events: none;
+    font-weight: 500; letter-spacing: 0.3px;
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.35);
+  }
+  .dock-icon[data-tip]:hover::before { opacity: 1; transform: translateX(-50%) translateY(0); }
+  /* 点击弹跳 */
+  .dock-icon.bouncing { animation: dockBounce 0.45s cubic-bezier(0.34,1.56,0.64,1); }
+  @keyframes dockBounce {
+    0% { transform: translateY(-8px) scale(1.12); }
+    40% { transform: translateY(-16px) scale(1.28); }
+    100% { transform: translateY(-8px) scale(1.12); }
+  }
+  /* Dock 入场动画 */
+  .dock { animation: dockEntrance 0.7s cubic-bezier(0.34,1.56,0.64,1) both; }
+  @keyframes dockEntrance {
+    from { transform: translateX(-50%) translateY(80px); opacity: 0; }
+    to { transform: translateX(-50%) translateY(0); opacity: 1; }
+  }
+  /* 切换桌宠按钮 - 高亮强调 */
+  #dockPetSwitch {
+    background: linear-gradient(135deg, rgba(255,170,200,0.30), rgba(170,200,255,0.30));
+    box-shadow: 0 0 0 1.5px rgba(255,255,255,0.20), 0 4px 14px rgba(0,0,0,0.25);
+  }
+  #dockPetSwitch svg {
+    stroke: rgba(255,255,255,0.95);
+    stroke-width: 1.9;
+  }
+  #dockPetSwitch:hover { transform: translateY(-8px) scale(1.14); }
+  #dockPetSwitch::before {
+    content: '切换桌宠';
+    position: absolute; top: -26px; left: 50%; transform: translateX(-50%);
+    font-size: 11px; line-height: 1; padding: 4px 8px; border-radius: 8px;
+    background: var(--mode-accent); color: #fff; white-space: nowrap;
+    opacity: 0; transition: opacity 0.25s ease; pointer-events: none;
+    font-weight: 600; letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+  #dockPetSwitch:hover::before { opacity: 1; }
+  #dockPetSwitch::after {
+    content: ''; position: absolute; top: -3px; right: -3px;
+    width: 9px; height: 9px; border-radius: 50%;
+    background: #ff5e8a;
+    box-shadow: 0 0 8px #ff5e8a, 0 0 2px #fff inset;
+    animation: petSwitchPulse 1.6s ease-in-out infinite;
+  }
+  @keyframes petSwitchPulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.5); opacity: 0.55; }
+  }
+  .dock-icon.highlight-drop {
+    background: rgba(255,255,255,0.12);
+    box-shadow: 0 0 20px var(--mode-pet-glow);
+    transform: translateY(-8px) scale(1.18);
+  }
+  .dock-icon.highlight-drop svg { stroke: var(--mode-accent); }
+  .dock-icon.pinned-shortcut svg { stroke: rgba(255,255,255,0.8); }
+  .dock-icon.pinned-shortcut .pin-dot {
+    position: absolute; top: 3px; right: 4px; width: 4px; height: 4px;
+    border-radius: 50%; background: var(--mode-accent);
+  }
+  .dock-trash-highlight { background: rgba(255,60,60,0.2) !important; }
+  .dock-trash-highlight svg { stroke: #ff6060 !important; }
+
+  /* ============ LAYOUT CONTROL ============ */
+  .layout-control {
+    position: fixed; top: 52px; right: 24px; z-index: 50;
+    display: flex; gap: 4px; padding: 4px;
+    background: rgba(0,0,0,0.25); backdrop-filter: blur(16px);
+    border-radius: 18px; border: 1px solid rgba(255,255,255,0.06);
+    opacity: 0; transform: translateY(-8px);
+    transition: all 0.4s cubic-bezier(0.34,1.56,0.64,1);
+    pointer-events: none;
+  }
+  .layout-control.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
+  .layout-btn {
+    width: 42px; height: 28px; border-radius: 14px; border: none;
+    background: transparent; color: var(--text-secondary); cursor: pointer;
+    font-size: 11px; font-family: var(--font-body); font-weight: 500;
+    transition: all 0.25s ease;
+  }
+  .layout-btn:hover { color: var(--text-primary); }
+  .layout-btn.active { background: rgba(255,255,255,0.12); color: var(--text-primary); }
+  /* 隐藏收纳区分隔符 + 按钮 */
+  .layout-sep { width: 1px; height: 20px; align-self: center; background: rgba(255,255,255,0.1); margin: 0 2px; }
+  .layout-toggle { width: auto; padding: 0 12px; }
+  .layout-toggle.hide-on { background: rgba(255,255,255,0.12); color: var(--text-primary); }
+  /* 隐藏收纳区时：所有收纳容器淡出消失 */
+  .desktop-area.hide-groups .file-group { opacity: 0 !important; transform: scale(0.85) !important; pointer-events: none !important; }
+  .desktop-area.hide-groups .file-group-label,
+  .desktop-area.hide-groups .file-group-more { opacity: 0 !important; pointer-events: none !important; }
+
+  /* ============ PET ============ */
+  /* ============ 桌宠（PNG图片版·像素风Q版女孩）============ */
+  .pet-container {
+    position: fixed; bottom: 90px; right: 40px; z-index: 150;
+    display: flex; flex-direction: column; align-items: center;
+    transition: left 0.5s cubic-bezier(0.34,1.56,0.64,1), top 0.5s cubic-bezier(0.34,1.56,0.64,1);
+    cursor: grab;
+    filter: drop-shadow(0 6px 12px rgba(0,0,0,0.35));
+    transform: scale(var(--pet-scale, 1));
+    transform-origin: bottom center;
+  }
+  .pet-container:active { cursor: grabbing; }
+  .pet-container.dragging { cursor: grabbing; z-index: 250; }
+
+  /* 地面阴影 */
+  .pet-shadow {
+    width: 46px; height: 5px; margin-top: -2px;
+    background: rgba(0,0,0,0.25);
+    border-radius: 50%;
+    animation: petShadowPulse 4s ease-in-out infinite;
+  }
+  @keyframes petShadowPulse {
+    0%,100% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(0.82); opacity: 0.3; }
+  }
+
+  /* 身体容器 */
+  .pet-body {
+    width: 120px; height: 132px;
+    position: relative; cursor: pointer;
+    animation: petFloat 4s ease-in-out infinite;
+    transition: filter var(--transition-smooth);
+  }
+  .pet-body:hover { transform: scale(1.06); }
+  .pet-body.walking { animation: petWalk 0.5s ease-in-out infinite; }
+  .pet-body.sleeping { transform: scale(0.92); filter: brightness(0.85) saturate(0.7); }
+  .pet-body.sleeping .pet-img { animation: petSleep 4s ease-in-out infinite; }
+
+  /* 桌宠精灵图 */
+  .pet-img {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: var(--frame-w);
+    height: var(--frame-h);
+    margin-left: calc(var(--frame-w) / -2);
+    background-image: var(--spritesheet);
+    background-size: calc(var(--frame-w) * var(--sprite-cols)) calc(var(--frame-h) * var(--sprite-rows));
+    background-repeat: no-repeat;
+    image-rendering: pixelated;
+    transition: none;
+  }
+
+  /* 9种动画状态 - 每行对应一个状态 */
+  /* row 0: idle (6 frames) */
+  .pet-body.state-idle .pet-img { animation: sprite-idle 1.2s steps(6, end) infinite; }
+  @keyframes sprite-idle {
+    from { background-position: 0 0; }
+    to { background-position: calc(var(--frame-w) * -6) 0; }
+  }
+
+  /* row 1: running-right (8 frames) */
+  .pet-body.state-run-right .pet-img { animation: sprite-run-right 0.8s steps(8, end) infinite; }
+  @keyframes sprite-run-right {
+    from { background-position: 0 calc(var(--frame-h) * -1); }
+    to { background-position: calc(var(--frame-w) * -8) calc(var(--frame-h) * -1); }
+  }
+
+  /* row 2: running-left (8 frames) */
+  .pet-body.state-run-left .pet-img { animation: sprite-run-left 0.8s steps(8, end) infinite; }
+  @keyframes sprite-run-left {
+    from { background-position: 0 calc(var(--frame-h) * -2); }
+    to { background-position: calc(var(--frame-w) * -8) calc(var(--frame-h) * -2); }
+  }
+
+  /* row 3: waving (4 frames) */
+  .pet-body.state-wave .pet-img { animation: sprite-wave 1.0s steps(4, end) infinite; }
+  @keyframes sprite-wave {
+    from { background-position: 0 calc(var(--frame-h) * -3); }
+    to { background-position: calc(var(--frame-w) * -4) calc(var(--frame-h) * -3); }
+  }
+
+  /* row 4: jumping (5 frames) */
+  .pet-body.state-jump .pet-img { animation: sprite-jump 0.7s steps(5, end) 1; }
+  @keyframes sprite-jump {
+    from { background-position: 0 calc(var(--frame-h) * -4); }
+    to { background-position: calc(var(--frame-w) * -5) calc(var(--frame-h) * -4); }
+  }
+
+  /* row 5: failed (8 frames) */
+  .pet-body.state-failed .pet-img { animation: sprite-failed 1.2s steps(8, end) infinite; }
+  @keyframes sprite-failed {
+    from { background-position: 0 calc(var(--frame-h) * -5); }
+    to { background-position: calc(var(--frame-w) * -8) calc(var(--frame-h) * -5); }
+  }
+
+  /* row 6: waiting (6 frames) */
+  .pet-body.state-wait .pet-img { animation: sprite-wait 1.5s steps(6, end) infinite; }
+  @keyframes sprite-wait {
+    from { background-position: 0 calc(var(--frame-h) * -6); }
+    to { background-position: calc(var(--frame-w) * -6) calc(var(--frame-h) * -6); }
+  }
+
+  /* row 7: running/busy (8 frames) */
+  .pet-body.state-busy .pet-img { animation: sprite-busy 1.0s steps(8, end) infinite; }
+  @keyframes sprite-busy {
+    from { background-position: 0 calc(var(--frame-h) * -7); }
+    to { background-position: calc(var(--frame-w) * -8) calc(var(--frame-h) * -7); }
+  }
+
+  /* row 8: review (6 frames) */
+  .pet-body.state-review .pet-img { animation: sprite-review 1.8s steps(6, end) infinite; }
+  @keyframes sprite-review {
+    from { background-position: 0 calc(var(--frame-h) * -8); }
+    to { background-position: calc(var(--frame-w) * -6) calc(var(--frame-h) * -8); }
+  }
+
+  /* 睡眠状态：用 waiting 或 failed 行，降低亮度 */
+  .pet-body.sleeping .pet-img {
+    filter: brightness(0.7) saturate(0.6);
+    animation-duration: 3s steps(6, end) infinite;
+  }
+
+  /* 嘴巴（隐藏，保留结构兼容JS） */
+  .pet-mouth { display: none; }
+
+  /* Zzz / Hearts */
+  .pet-zzz { position: absolute; top: 5px; right: 5px; font-size: 22px; opacity:0; transition: opacity 0.5s ease; pointer-events: none; animation: zzzFloat 2s ease-in-out infinite; z-index: 20; }
+  .pet-zzz.show { opacity: 1; }
+  .pet-hearts { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); pointer-events: none; z-index: 20; }
+  .pet-heart { position: absolute; font-size: 16px; animation: heartFloat 1s ease-out forwards; }
+  .pet-sparkle { position: absolute; font-size: 14px; pointer-events: none; animation: sparklePop 0.6s ease-out forwards; z-index: 3; }
+
+  /* ============ PET ANIMATIONS ============ */
+  @keyframes petFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+  @keyframes petWalk { 0%,100%{transform:translateY(0) rotate(0deg)} 25%{transform:translateY(-4px) rotate(-4deg)} 75%{transform:translateY(-4px) rotate(4deg)} }
+  @keyframes petSleep { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-2px)} }
+  @keyframes sparklePop { 0%{opacity:1;transform:translate(0,0)scale(0)} 50%{opacity:1;transform:translate(0,-20px)scale(1.5)} 100%{opacity:0;transform:translate(0,-40px)scale(0.5)} }
+  @keyframes heartFloat { 0%{opacity:1;transform:translateY(0)scale(.5)} 50%{opacity:1;transform:translateY(-30px)scale(1.2)} 100%{opacity:0;transform:translateY(-60px)scale(.8)} }
+  @keyframes zzzFloat { 0%,100%{transform:translateY(0);opacity:.6} 50%{transform:translateY(-10px);opacity:1} }
+  @keyframes petBounce { 0%,100%{transform:scale(1)} 30%{transform:scale(1.12,.88)} 50%{transform:scale(.92,1.08)} 70%{transform:scale(1.04,.96)} }
+  @keyframes petJump { 0%{transform:translateY(0)scale(1,1)} 40%{transform:translateY(-35px)scale(1.08,.92)} 60%{transform:translateY(-35px)scale(.95,1.05)} 100%{transform:translateY(0)scale(1,1)} }
+  @keyframes petSpin { 0%{transform:rotate(0deg)} 100%{transform:rotate(720deg)} }
+
+  .pet-bouncing { animation: petBounce 0.6s ease; }
+  .pet-jumping { animation: petJump 0.7s ease; }
+  .pet-body.spinning { animation: petSpin 0.8s ease-in-out; }
+
+  /* ============ SPEECH BUBBLE ============ */
+  .speech-bubble {
+    position: fixed; left: 0; top: 0;
+    background: rgba(22,22,42,0.94); backdrop-filter: blur(18px);
+    border: 1px solid rgba(255,255,255,0.12); border-radius: 16px;
+    padding: 12px 16px; max-width: 230px; font-size: 13px; line-height: 1.5;
+    color: var(--text-primary); box-shadow: var(--shadow-card);
+    opacity: 0; transform: translateY(8px) scale(0.95);
+    transition: opacity 0.35s cubic-bezier(0.34,1.56,0.64,1), transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+    will-change: left, top;
+    pointer-events: none; z-index: 160;
+  }
+  .speech-bubble.show { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+  .speech-bubble::after {
+    content: ''; position: absolute; bottom: -8px;
+    left: var(--arrow-x, 30px); transform: translateX(-50%);
+    width: 16px; height: 8px; background: rgba(22,22,42,0.94);
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+  }
+  .bubble-actions { display: flex; gap: 8px; margin-top: 10px; }
+  .bubble-btn {
+    padding: 6px 14px; border-radius: 14px; border: none; cursor: pointer;
+    font-size: 12px; font-family: var(--font-body); font-weight: 500; transition: all 0.2s ease;
+  }
+  .bubble-btn.primary { background: var(--mode-accent); color: #1a1a2e; }
+  .bubble-btn.primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
+  .bubble-btn.secondary { background: rgba(255,255,255,0.1); color: var(--text-primary); }
+  .bubble-btn.secondary:hover { background: rgba(255,255,255,0.18); }
+
+  /* ============ ORGANIZE PANEL ============ */
+  .organize-panel {
+    position: fixed; right:0; top:44px; bottom:64px; width:340px; z-index: 180;
+    background: rgba(14,14,34,0.96); backdrop-filter: blur(30px);
+    border-left: 1px solid rgba(255,255,255,0.08);
+    transform: translateX(100%);
+    transition: transform 0.5s cubic-bezier(0.25,0.1,0.25,1);
+    display: flex; flex-direction: column; padding: 24px;
+    box-shadow: -8px 0 40px rgba(0,0,0,0.4);
+  }
+  .organize-panel.open { transform: translateX(0); }
+  .panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .panel-title { font-size: 18px; font-weight: 700; }
+  .panel-close {
+    width: 32px; height: 32px; border-radius: 50%; border: none;
+    background: rgba(255,255,255,0.08); color: var(--text-secondary); cursor: pointer;
+    font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;
+  }
+  .panel-close:hover { background: rgba(255,255,255,0.16); color: var(--text-primary); }
+  .panel-subtitle { font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.5; }
+  /* AI 智能识别摘要卡 */
+  .ai-suggestion-card {
+    background: linear-gradient(135deg, rgba(94,196,182,0.10), rgba(184,160,232,0.10));
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px; margin-bottom: 16px;
+  }
+  .suggestion-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .suggestion-icon { font-size: 16px; }
+  .suggestion-title { font-size: 13px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.3px; }
+  .suggestion-summary { font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; line-height: 1.5; }
+  .suggestion-types { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .suggestion-type-chip {
+    background: rgba(255,255,255,0.06); padding: 4px 9px; border-radius: 12px;
+    font-size: 11px; color: var(--text-secondary); border: 1px solid rgba(255,255,255,0.05);
+  }
+  .suggestion-type-chip strong { color: var(--text-primary); font-weight: 600; margin-left: 2px; }
+  .suggestion-forecast {
+    font-size: 11px; color: var(--text-secondary);
+    padding-top: 10px; border-top: 1px dashed rgba(255,255,255,0.10);
+    line-height: 1.5;
+  }
+  .suggestion-forecast strong { color: var(--mode-accent); font-weight: 600; }
+  .category-list { display: flex; flex-direction: column; gap: 10px; flex:1; overflow-y:auto; }
+  .category-item {
+    display: flex; align-items: center; gap: 12px; padding: 11px 13px;
+    border-radius: var(--radius-sm); background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06); transition: all 0.2s ease;
+  }
+  .category-item.priority {
+    background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+    border-color: var(--mode-accent);
+    box-shadow: 0 0 0 1px var(--mode-accent) inset, 0 4px 16px rgba(0,0,0,0.2);
+  }
+  .priority-badge {
+    display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 8px;
+    font-size: 10px; font-weight: 600; background: var(--mode-accent); color: #1a1a2e;
+    vertical-align: middle;
+  }
+  .category-icon {
+    width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center;
+    justify-content: center; flex-shrink: 0;
+  }
+  .category-icon svg { width: 18px; height: 18px; stroke: currentColor; stroke-width: 1.5; fill: none; }
+  .category-info { flex: 1; }
+  .category-name { font-size: 13px; font-weight: 500; }
+  .category-count { font-size: 11px; color: var(--text-secondary); }
+  .panel-actions { display: flex; gap: 10px; margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.06); }
+  .panel-btn {
+    flex: 1; padding: 12px; border-radius: var(--radius-sm); border: none; cursor: pointer;
+    font-size: 14px; font-family: var(--font-body); font-weight: 600; transition: all 0.2s ease;
+  }
+  .panel-btn.primary-action { background: var(--mode-accent); color: #1a1a2e; }
+  .panel-btn.primary-action:hover { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
+  .panel-btn.undo-action { background: rgba(255,255,255,0.08); color: var(--text-primary); }
+  .panel-btn.undo-action:hover { background: rgba(255,255,255,0.14); }
+
+  /* ============ RECENT RECORDS ============ */
+  .recent-records { margin-top: 14px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px; }
+  .recent-records-title { font-size: 11px; color: var(--text-secondary); margin-bottom: 8px; letter-spacing: 0.5px; }
+  .recent-records-list { display: flex; flex-direction: column; gap: 6px; max-height: 120px; overflow-y: auto; }
+  .recent-record-item { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--text-secondary); padding: 6px 8px; background: rgba(255,255,255,0.03); border-radius: 6px; }
+  .recent-record-item .rr-time { color: var(--text-secondary); opacity: 0.6; font-size: 10px; flex-shrink: 0; min-width: 38px; }
+  .recent-record-item .rr-summary { color: var(--text-primary); flex: 1; }
+
+  /* ============ RECLASSIFY MENU ============ */
+  .reclassify-menu { position: fixed; z-index: 400; background: rgba(22,22,42,0.96); backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 8px; min-width: 140px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+  .reclassify-menu-title { font-size: 10px; color: var(--text-secondary); padding: 2px 8px 6px; letter-spacing: 0.5px; }
+  .reclassify-menu-item { display: flex; align-items: center; gap: 8px; padding: 7px 10px; font-size: 12px; color: var(--text-primary); border-radius: 6px; cursor: pointer; }
+  .reclassify-menu-item:hover { background: rgba(255,255,255,0.1); }
+  .reclassify-menu-item.current { color: var(--mode-accent); }
+  .file-icon .reclassify-btn { position: absolute; bottom: -2px; right: -2px; z-index: 6; font-size: 9px; padding: 2px 5px; background: rgba(22,22,42,0.9); color: var(--text-secondary); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; cursor: pointer; opacity: 0; transition: opacity 0.2s; }
+  .file-icon:hover .reclassify-btn { opacity: 1; }
+  .file-icon .reclassify-btn:hover { color: var(--mode-accent); border-color: var(--mode-accent); }
+
+  /* ============ SETTINGS POPOVER ============ */
+  .settings-popover {
+    position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%) translateY(12px);
+    z-index: 250; width: 260px; padding: 16px;
+    background: rgba(22,22,42,0.96); backdrop-filter: blur(18px) saturate(140%);
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 16px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+    opacity: 0; visibility: hidden; pointer-events: none;
+    transition: all 0.28s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .settings-popover.open { opacity: 1; visibility: visible; pointer-events: auto; transform: translateX(-50%) translateY(0); }
+  .settings-popover::after {
+    content: ''; position: absolute; bottom: -7px; left: 50%; transform: translateX(-50%) rotate(45deg);
+    width: 12px; height: 12px; background: rgba(22,22,42,0.96);
+    border-right: 1px solid rgba(255,255,255,0.1); border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .settings-title { font-size: 12px; color: var(--text-secondary); margin-bottom: 12px; letter-spacing: 0.5px; }
+  .setting-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .setting-row:last-child { margin-bottom: 0; }
+  .setting-label { font-size: 12.5px; color: var(--text-primary); }
+  .setting-segment { display: flex; background: rgba(255,255,255,0.05); border-radius: 8px; padding: 2px; gap: 2px; }
+  .setting-segment button {
+    border: none; background: transparent; color: var(--text-secondary);
+    font-size: 11px; padding: 5px 10px; border-radius: 6px; cursor: pointer;
+    transition: all 0.2s ease; font-family: inherit;
+  }
+  .setting-segment button:hover { color: var(--text-primary); }
+  .setting-segment button.active { background: var(--mode-accent); color: #fff; font-weight: 600; }
+
+  /* ============ TOAST ============ */
+  .toast {
+    position: fixed; top: 60px; left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background: rgba(22,22,42,0.92); backdrop-filter: blur(14px);
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
+    padding: 10px 20px; font-size: 13px; color: var(--text-primary);
+    opacity: 0; transition: all 0.4s cubic-bezier(0.34,1.56,0.64,1);
+    z-index: 300; pointer-events: none; display: flex; align-items: center; gap: 8px;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ============ DRAG PREVIEW ============ */
+  .drag-preview {
+    position: fixed; pointer-events: none; z-index: 500;
+    opacity: 0.85; transform: rotate(-2deg) scale(0.95);
+    filter: drop-shadow(0 8px 20px rgba(0,0,0,0.5));
+  }
+
+  /* ============ RESPONSIVE ============ */
+  @media (max-width: 768px) {
+    :root { --frame-w: 120px; --frame-h: 144px; }
+    .organize-panel { width: 100%; }
+    .dock { padding: 6px 10px; gap: 4px; }
+    .dock-icon { width: 34px; height: 34px; font-size: 15px; }
+    .pet-body { width: 76px; height: 84px; }
+    .pet-shadow { width: 30px; height: 4px; }
+    .file-icon { width: 70px; padding: 6px 4px 8px; }
+    .file-icon-inner { width: 42px; height: 42px; }
+    .file-icon-inner svg { width: 22px; height: 22px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOADING SCREEN -->
+<div id="loadingScreen">
+  <div class="loading-logo">栖序</div>
+  <div class="loading-spinner"></div>
+  <div class="loading-bar"><div class="loading-bar-fill" id="loadingBarFill"></div></div>
+  <div class="loading-text" id="loadingText">正在唤醒桌宠…</div>
+</div>
+
+<!-- PET SWITCHER MODAL -->
+<div id="petSwitcherModal">
+  <div class="pet-switcher-card">
+    <div class="pet-switcher-title">选择桌宠</div>
+    <div class="pet-switcher-grid">
+      <div class="pet-card" data-pet="perlica">
+        <div class="pet-card-preview" style="--pet-sprite: var(--pet-perlica);"></div>
+        <div class="pet-card-name">Perlica</div>
+        <div class="pet-card-desc">珍珠般的小仙灵</div>
+      </div>
+      <div class="pet-card" data-pet="guga">
+        <div class="pet-card-preview" style="--pet-sprite: var(--pet-guga);"></div>
+        <div class="pet-card-name">咕嘎</div>
+        <div class="pet-card-desc">企鹅卫衣的Q版女孩</div>
+      </div>
+      <div class="pet-card" data-pet="miyabi">
+        <div class="pet-card-preview" style="--pet-sprite: var(--pet-miyabi);"></div>
+        <div class="pet-card-name">Miyabi</div>
+        <div class="pet-card-desc">狐耳剑士雅小姐</div>
+      </div>
+    </div>
+    <div class="pet-switcher-actions">
+      <button class="pet-switcher-btn" id="petSwitcherClose">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- INTRO MODAL -->
+<div id="introModal">
+  <div class="intro-card">
+    <div class="intro-title">欢迎使用栖序</div>
+    <div class="intro-sub">陪伴式桌面整理助手 · 这里是功能速览</div>
+
+    <div class="intro-section">
+      <h4><span class="intro-icon">📁</span>桌面文件管理</h4>
+      <p>桌面上的文件可自由拖动到任意位置。拖到 Dock 栏的文件夹可固定为快捷方式，拖到回收站即可删除。点击 Dock 的下载图标可模拟新文件落入桌面。</p>
+    </div>
+
+    <div class="intro-section">
+      <h4><span class="intro-icon">✨</span>AI 一键整理</h4>
+      <p>桌宠会主动提议整理方案，点击气泡中的「预览AI方案」或按 <kbd>Ctrl</kbd>+<kbd>O</kbd> 打开整理面板，按文件类型自动分组归类。</p>
+    </div>
+
+    <div class="intro-section">
+      <h4><span class="intro-icon">🐾</span>桌宠互动</h4>
+      <p>单击桌宠会挥手致意，双击会开心跳跃。长按可拖动桌宠到任意位置。闲置一段时间后桌宠会自主散步，深夜还会打瞌睡。</p>
+    </div>
+
+    <div class="intro-section">
+      <h4><span class="intro-icon">📊</span>整洁度状态</h4>
+      <p>顶部状态栏实时显示桌面整洁度与文件数量，整理后整洁度会回升，桌宠的心情也会跟着变好。</p>
+    </div>
+
+    <div class="intro-actions">
+      <button class="intro-btn primary" id="introCloseBtn">开始体验</button>
+    </div>
+  </div>
+</div>
+
+<!-- DESKTOP BACKGROUND -->
+<div class="desktop" id="desktopBg">
+  <div class="glass-strip glass-strip-1"></div>
+  <div class="glass-strip glass-strip-2"></div>
+</div>
+
+
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <span class="topbar-logo">栖序</span>
+  </div>
+  <div class="topbar-right">
+    <span id="topbarStatus">整洁度 <span class="topbar-clean good" id="statClean">良好</span></span>
+    <div class="topbar-bar"><div class="topbar-bar-fill" id="statBar" style="width:60%;"></div></div>
+    <span id="desktopFileCount">14 个文件</span>
+    <span id="topbarToday" class="topbar-today">今日 整理 0 · 新增 0</span>
+    <span id="topbarTime">--:--</span>
+  </div>
+</div>
+
+<!-- DESKTOP AREA -->
+<div class="desktop-area" id="desktopArea">
+  <div class="file-group" id="group-screenshot">
+    <span class="file-group-label">截图收纳区</span>
+    <span class="file-group-more" data-group="group-screenshot">+0</span>
+  </div>
+  <div class="file-group" id="group-doc">
+    <span class="file-group-label">文档区</span>
+    <span class="file-group-more" data-group="group-doc">+0</span>
+  </div>
+  <div class="file-group" id="group-archive">
+    <span class="file-group-label">压缩包区</span>
+    <span class="file-group-more" data-group="group-archive">+0</span>
+  </div>
+  <div class="file-group" id="group-installer">
+    <span class="file-group-label">安装包区</span>
+    <span class="file-group-more" data-group="group-installer">+0</span>
+  </div>
+  <div class="file-group" id="group-video">
+    <span class="file-group-label">视频素材区</span>
+    <span class="file-group-more" data-group="group-video">+0</span>
+  </div>
+  <div class="file-group" id="group-temp">
+    <span class="file-group-label">其他文件</span>
+    <span class="file-group-more" data-group="group-temp">+0</span>
+  </div>
+  <div class="files-layer" id="filesLayer"></div>
+</div>
+
+<!-- LAYOUT CONTROL -->
+<div class="layout-control" id="layoutControl">
+  <button class="layout-btn active" data-align="center" title="居中排列">居中</button>
+  <button class="layout-btn" data-align="left" title="靠左排列">靠左</button>
+  <button class="layout-btn" data-align="right" title="靠右排列">靠右</button>
+  <span class="layout-sep"></span>
+  <button class="layout-btn layout-toggle" id="hideGroupsBtn" title="隐藏收纳区">隐藏</button>
+</div>
+
+<!-- ORGANIZE PANEL -->
+<div class="organize-panel" id="organizePanel">
+  <div class="panel-header">
+    <span class="panel-title">AI 整理方案</span>
+    <button class="panel-close" id="panelClose">✕</button>
+  </div>
+  <p class="panel-subtitle">栖序已按文件类型+命名模式+时间智能分类，请确认以下建议。</p>
+  <div class="ai-suggestion-card" id="aiSuggestionCard">
+    <div class="suggestion-header">
+      <span class="suggestion-icon">📊</span>
+      <span class="suggestion-title">智能识别结果</span>
+    </div>
+    <div class="suggestion-summary" id="suggestionSummary"></div>
+    <div class="suggestion-types" id="suggestionTypes"></div>
+    <div class="suggestion-forecast" id="suggestionForecast"></div>
+  </div>
+  <div class="category-list" id="categoryList"></div>
+  <div class="panel-actions">
+    <button class="panel-btn undo-action" id="undoBtn" style="display:none;">撤销整理</button>
+    <button class="panel-btn primary-action" id="organizeBtn">确认整理</button>
+  </div>
+  <div class="recent-records" id="recentRecords" style="display:none;">
+    <div class="recent-records-title">最近整理记录</div>
+    <div class="recent-records-list" id="recentRecordsList"></div>
+  </div>
+</div>
+
+<!-- DOCK -->
+<div class="dock" id="dockBar">
+  <div class="dock-icon active" title="桌面" data-tip="桌面"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg></div>
+  <div class="dock-icon" title="文件管理" data-tip="文件管理"><svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg></div>
+  <div class="dock-icon" title="已整理" data-tip="已整理"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="18" rx="2"/><polyline points="2 9 9 9 11 7 13 7 15 9 22 9"/></svg></div>
+  <div class="dock-icon" id="dockSettings" title="设置" data-tip="设置"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+  <div class="dock-icon" id="dockDownload" title="模拟下载文件到桌面" data-tip="下载文件"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>
+  <div class="dock-icon" id="dockPetSwitch" title="切换桌宠" data-tip="切换桌宠"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="12" cy="12" r="3" fill="white"/></svg></div>
+  <div class="dock-icon" title="回收站" id="dockTrash" data-tip="回收站"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></div>
+</div>
+
+<!-- SETTINGS POPOVER -->
+<div class="settings-popover" id="settingsPopover">
+  <div class="settings-title">设置</div>
+  <div class="setting-row">
+    <span class="setting-label">桌宠大小</span>
+    <div class="setting-segment" id="petSizeSegment">
+      <button data-size="small">小</button>
+      <button data-size="medium" class="active">中</button>
+      <button data-size="large">大</button>
+    </div>
+  </div>
+  <div class="setting-row">
+    <span class="setting-label">散步频率</span>
+    <div class="setting-segment" id="walkFreqSegment">
+      <button data-freq="quiet">安静</button>
+      <button data-freq="normal" class="active">正常</button>
+      <button data-freq="active">活泼</button>
+    </div>
+  </div>
+  <div class="setting-row">
+    <span class="setting-label">整理后面板</span>
+    <div class="setting-segment" id="autoCloseSegment">
+      <button data-autoclose="off">手动关</button>
+      <button data-autoclose="on" class="active">自动收起</button>
+    </div>
+  </div>
+</div>
+
+<!-- PET -->
+<div class="pet-container" id="petContainer">
+  <div class="pet-body" id="petBody" title="拖拽可移动 · 点击互动 · 双击喂食">
+    <div class="pet-img"></div>
+    <div class="pet-mouth" id="petMouth"></div>
+  </div>
+  <div class="pet-zzz" id="petZzz">💤</div>
+  <div class="pet-hearts" id="petHearts"></div>
+  <div class="pet-shadow"></div>
+</div>
+
+<!-- SPEECH BUBBLE -->
+<div class="speech-bubble" id="speechBubble">
+  <div id="bubbleText"></div>
+  <div class="bubble-actions" id="bubbleActions"></div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- GROUP EXPAND MODAL（手机文件夹式展开面板） -->
+<div class="group-expand-overlay" id="groupExpandOverlay">
+  <div class="group-expand-card">
+    <div class="group-expand-header">
+      <div>
+        <span class="group-expand-title" id="groupExpandTitle">收纳区</span>
+        <span class="group-expand-count" id="groupExpandCount"></span>
+      </div>
+      <button class="group-expand-close" id="groupExpandClose" aria-label="关闭">×</button>
+    </div>
+    <div class="group-expand-body" id="groupExpandBody"></div>
+  </div>
+</div>
+
+<!-- RECLASSIFY MENU（误判修正：换个分类） -->
+<div class="reclassify-menu" id="reclassifyMenu" style="display:none;">
+  <div class="reclassify-menu-title">换个分类</div>
+  <div class="reclassify-menu-list" id="reclassifyMenuList"></div>
+</div>
+
+<script>
+// ============ LOADING SCREEN ============
+const loadingScreen = document.getElementById('loadingScreen');
+const loadingBarFill = document.getElementById('loadingBarFill');
+const loadingText = document.getElementById('loadingText');
+const loadingPhrases = ['正在唤醒桌宠…', '正在整理桌面…', '即将就绪…'];
+let loadingProgress = 0;
+let loadingDone = false;
+
+// 模拟进度递增（init 完成前最多到 90%）
+function tickLoading() {
+  if (loadingDone) return;
+  loadingProgress = Math.min(90, loadingProgress + Math.random() * 12 + 4);
+  loadingBarFill.style.width = loadingProgress + '%';
+  const idx = loadingProgress > 60 ? 2 : loadingProgress > 25 ? 1 : 0;
+  loadingText.textContent = loadingPhrases[idx];
+  if (loadingProgress < 90) {
+    setTimeout(tickLoading, 180 + Math.random() * 220);
+  }
+}
+tickLoading();
+
+// init 完成后调用，填满进度条并淡出（保证最小展示 1.2s）
+const loadingStartTime = Date.now();
+const introModal = document.getElementById('introModal');
+const introCloseBtn = document.getElementById('introCloseBtn');
+function finishLoading() {
+  if (loadingDone) return;
+  const elapsed = Date.now() - loadingStartTime;
+  const minDisplay = 1200;
+  if (elapsed < minDisplay) {
+    setTimeout(finishLoading, minDisplay - elapsed);
+    return;
+  }
+  loadingDone = true;
+  loadingBarFill.style.width = '100%';
+  loadingText.textContent = '就绪';
+  setTimeout(() => {
+    loadingScreen.classList.add('hide');
+    // 加载界面淡出后弹出说明弹窗
+    setTimeout(() => introModal.classList.add('show'), 500);
+  }, 350);
+}
+
+// 关闭说明弹窗，关闭后触发桌宠的初始提示
+function closeIntroAndPrompt() {
+  introModal.classList.remove('show');
+  setTimeout(() => {
+    const cfg = MODE_CONFIG[currentMode];
+    showBubble(cfg.initialPrompt, [
+      { label: '预览AI方案', primary: true, handler: openOrganizePanel },
+      { label: '先不用~', primary: false, handler: hideBubble },
+    ]);
+  }, 400);
+}
+introCloseBtn.addEventListener('click', closeIntroAndPrompt);
+introModal.addEventListener('click', (e) => { if (e.target === introModal) closeIntroAndPrompt(); });
+
+// 保底：5s 后强制淡出，防止意外卡死
+setTimeout(() => { if (!loadingDone) finishLoading(); }, 5000);
+
+// ============ PET SWITCHER ============
+const PET_LIST = [
+  { id: 'perlica', name: 'Perlica', desc: '珍珠般的小仙灵' },
+  { id: 'guga', name: '咕嘎', desc: '企鹅卫衣的Q版女孩' },
+  { id: 'miyabi', name: 'Miyabi', desc: '狐耳剑士雅小姐' },
+];
+const PET_SPRITES = {
+  perlica: 'perlica_spritesheet.webp',
+  guga: 'guga_spritesheet.webp',
+  miyabi: 'miyabi_spritesheet.webp',
+};
+let currentPet = 'perlica';
+const petSwitcherModal = document.getElementById('petSwitcherModal');
+const petSwitcherClose = document.getElementById('petSwitcherClose');
+const dockPetSwitch = document.getElementById('dockPetSwitch');
+
+function openPetSwitcher() {
+  // 给每个卡片设置预览图和高亮
+  document.querySelectorAll('.pet-card').forEach(card => {
+    const petId = card.dataset.pet;
+    card.classList.toggle('active', petId === currentPet);
+    const preview = card.querySelector('.pet-card-preview');
+    if (preview && PET_SPRITES[petId]) {
+      preview.style.backgroundImage = "url('" + PET_SPRITES[petId] + "')";
+    }
+  });
+  petSwitcherModal.classList.add('show');
+}
+function closePetSwitcher() { petSwitcherModal.classList.remove('show'); }
+
+dockPetSwitch.addEventListener('click', openPetSwitcher);
+petSwitcherClose.addEventListener('click', closePetSwitcher);
+petSwitcherModal.addEventListener('click', (e) => { if (e.target === petSwitcherModal) closePetSwitcher(); });
+
+// ============ 设置弹出层 ============
+const dockSettings = document.getElementById('dockSettings');
+const settingsPopover = document.getElementById('settingsPopover');
+const settingsState = { petSize: 'medium', walkFreq: 'normal', autoClose: 'on' };
+const PET_SIZE_SCALE = { small: 0.78, medium: 1.0, large: 1.3 };
+const WALK_FREQ_INTERVAL = { quiet: [10000, 25000], normal: [5000, 12000], active: [2500, 6000] };
+
+function toggleSettings() {
+  settingsPopover.classList.toggle('open');
+}
+dockSettings.addEventListener('click', (e) => { e.stopPropagation(); toggleSettings(); });
+document.addEventListener('click', (e) => {
+  if (!settingsPopover.classList.contains('open')) return;
+  if (!settingsPopover.contains(e.target) && e.target !== dockSettings) settingsPopover.classList.remove('open');
+});
+
+function applyPetSize(size) {
+  settingsState.petSize = size;
+  document.documentElement.style.setProperty('--pet-scale', PET_SIZE_SCALE[size]);
+  try { localStorage.setItem('petSize', size); } catch(e) {}
+}
+function applyWalkFreq(freq) {
+  settingsState.walkFreq = freq;
+  try { localStorage.setItem('walkFreq', freq); } catch(e) {}
+  scheduleWalk(); // 用新间隔重新排程
+}
+function applyAutoClose(val) {
+  settingsState.autoClose = val;
+  try { localStorage.setItem('autoClose', val); } catch(e) {}
+}
+
+// 分段按钮通用处理
+function bindSegment(containerId, attr, applyFn) {
+  const seg = document.getElementById(containerId);
+  seg.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      seg.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      applyFn(btn.dataset[attr]);
+    });
+  });
+}
+bindSegment('petSizeSegment', 'size', applyPetSize);
+bindSegment('walkFreqSegment', 'freq', applyWalkFreq);
+bindSegment('autoCloseSegment', 'autoclose', applyAutoClose);
+
+// 恢复保存的设置（仅设状态与 CSS，不触发 scheduleWalk——此时相关变量尚未声明）
+(function restoreSettings() {
+  try {
+    const ps = localStorage.getItem('petSize');
+    const wf = localStorage.getItem('walkFreq');
+    const ac = localStorage.getItem('autoClose');
+    if (ps && PET_SIZE_SCALE[ps]) {
+      settingsState.petSize = ps;
+      document.documentElement.style.setProperty('--pet-scale', PET_SIZE_SCALE[ps]);
+      document.querySelectorAll('#petSizeSegment button').forEach(b => b.classList.toggle('active', b.dataset.size === ps));
+    }
+    if (wf && WALK_FREQ_INTERVAL[wf]) {
+      settingsState.walkFreq = wf;
+      document.querySelectorAll('#walkFreqSegment button').forEach(b => b.classList.toggle('active', b.dataset.freq === wf));
+    }
+    if (ac) {
+      settingsState.autoClose = ac;
+      document.querySelectorAll('#autoCloseSegment button').forEach(b => b.classList.toggle('active', b.dataset.autoclose === ac));
+    }
+  } catch(e) {}
+})();
+
+// Dock 图标点击弹跳动画
+document.querySelectorAll('.dock-icon').forEach(icon => {
+  icon.addEventListener('click', () => {
+    icon.classList.remove('bouncing');
+    void icon.offsetWidth; // 重置动画
+    icon.classList.add('bouncing');
+    setTimeout(() => icon.classList.remove('bouncing'), 460);
+  });
+});
+
+// 点击宠物卡片切换
+document.querySelectorAll('.pet-card').forEach(card => {
+  card.addEventListener('click', () => {
+    const petId = card.dataset.pet;
+    switchPet(petId);
+    closePetSwitcher();
+  });
+});
+
+function switchPet(petId) {
+  if (!PET_LIST.find(p => p.id === petId)) return;
+  currentPet = petId;
+  const dataUrl = PET_SPRITES[petId];
+  if (!dataUrl) return;
+  const petImg = document.querySelector('.pet-img');
+  if (petImg) petImg.style.backgroundImage = "url('" + dataUrl + "')";
+  // 保存选择
+  try { localStorage.setItem('currentPet', petId); } catch(e) {}
+  // 重置到 idle 状态
+  setPetState('idle');
+}
+
+// 恢复上次选择
+try {
+  const saved = localStorage.getItem('currentPet');
+  if (saved && PET_LIST.find(p => p.id === saved)) {
+    // 延迟切换，等 DOM 和 CSS 变量就绪
+    setTimeout(() => switchPet(saved), 0);
+  }
+} catch(e) {}
+
+// ============ SVG ICONS ============
+const FILE_SVG = {
+  screenshot: `<svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="8.5" cy="10.5" r="1.5" fill="currentColor" stroke="none"/><polyline points="2 18 7 13 10 16 14 10 22 18"/></svg>`,
+  doc: `<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>`,
+  archive: `<svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`,
+  installer: `<svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="12" y1="17" x2="12" y2="22"/><polyline points="8 20 12 22 16 20"/><circle cx="12" cy="10" r="2" fill="currentColor" stroke="none"/></svg>`,
+  video: `<svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><polygon points="10 8.5 17 12 10 15.5" fill="currentColor" stroke="none"/></svg>`,
+  temp: `<svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`,
+  design: `<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/><path d="M8.5 15c1.5 2 5.5 2 7 0"/></svg>`,
+  shortcut: `<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/><polyline points="13 11 14.5 9.5"/></svg>`,
+};
+
+// ============ FILE TYPE DEFINITIONS (complex recognition) ============
+const FILE_TYPE_RULES = [
+  { type:'screenshot', exts:['png','jpg','jpeg','gif','bmp','webp','tiff'], namePatterns:['截图','Screenshot','screen','capture','录屏截图','snip'] },
+  { type:'doc', exts:['doc','docx','pdf','txt','xls','xlsx','ppt','pptx','md','csv','rtf'], namePatterns:['报告','论文','周报','日报','笔记','合同','简历'] },
+  { type:'archive', exts:['zip','rar','7z','tar','gz','bz2','xz','tgz'], namePatterns:['压缩包','素材包','归档','backup'] },
+  { type:'installer', exts:['exe','msi','dmg','pkg','apk','deb','rpm'], namePatterns:['setup','install','Setup','Installer'] },
+  { type:'video', exts:['mp4','avi','mkv','mov','wmv','flv','webm'], namePatterns:['录屏','录制','视频','video','教程'] },
+  { type:'design', exts:['psd','ai','fig','sketch','xd','svg','eps'], namePatterns:['素材','设计','海报','banner','icon','logo','源文件'] },
+  { type:'temp', exts:['tmp','bak','log','cache','old'], namePatterns:['临时','temp','未命名','新建','备份_'] },
+  { type:'shortcut', exts:['lnk','url','webloc','desktop'], namePatterns:['快捷方式','shortcut','链接'] },
+];
+
+function recognizeFileType(fileName) {
+  const lower = fileName.toLowerCase();
+  const dotIdx = lower.lastIndexOf('.');
+  const ext = dotIdx >= 0 ? lower.slice(dotIdx + 1) : '';
+
+  for (const rule of FILE_TYPE_RULES) {
+    if (ext && rule.exts.includes(ext)) return rule.type;
+    for (const pat of rule.namePatterns) {
+      if (lower.includes(pat.toLowerCase())) return rule.type;
+    }
+  }
+  // Fallback: treat unknown extensions as temp
+  return 'temp';
+}
+
+// ============ FILE METADATA ============
+const FILE_TYPE_META = {
+  screenshot: { label:'截图', emoji:'🖼️', color:'#5ec4b6', group:'group-screenshot', catName:'截图收纳', iconSvg:FILE_SVG.screenshot },
+  doc:        { label:'文档', emoji:'📄', color:'#e8c97e', group:'group-doc', catName:'文档归类', iconSvg:FILE_SVG.doc },
+  archive:    { label:'压缩包', emoji:'📦', color:'#b8a0e8', group:'group-archive', catName:'压缩包归档', iconSvg:FILE_SVG.archive },
+  installer:  { label:'安装包', emoji:'💿', color:'#6dd49e', group:'group-installer', catName:'安装包整理', iconSvg:FILE_SVG.installer },
+  video:      { label:'视频', emoji:'🎬', color:'#e8a0c0', group:'group-video', catName:'视频素材', iconSvg:FILE_SVG.video },
+  // 临时/设计/快捷方式 都归到「其他文件」类别，避免面板显示 3 类但桌面只有 1 个容器的不一致
+  temp:       { label:'临时', emoji:'📝', color:'#c9a96e', group:'group-temp', catName:'其他文件', iconSvg:FILE_SVG.temp },
+  design:     { label:'设计', emoji:'🎨', color:'#6ec6d8', group:'group-temp', catName:'其他文件', iconSvg:FILE_SVG.design },
+  shortcut:   { label:'快捷方式', emoji:'🔗', color:'#9895aa', group:'group-temp', catName:'其他文件', iconSvg:FILE_SVG.shortcut },
+};
+
+// 收纳区标签映射（用于重分类菜单显示；运行时从 DOM 读取以支持重命名）
+function getGroupLabel(gid) {
+  const el = document.querySelector(`#${gid} .file-group-label`);
+  return el ? el.textContent.trim() : gid;
+}
+// 文件所属收纳区（支持 manualGroup 覆盖，用于误判修正）
+function getFileGroup(f) { return f.manualGroup || FILE_TYPE_META[f.type].group; }
+const ALL_GROUP_IDS = ['group-screenshot','group-doc','group-archive','group-installer','group-video','group-temp'];
+
+// ============ SHARED DESKTOP FILES ============
+// 方向 C：三种模式共享同一份桌面文件，模式只影响整理优先级与桌宠表现
+const SHARED_FILES = [
+  // 截图类
+  { id:'f1',  name:'截图_20250617_145.png',    size:'1.2 MB', date:'刚刚' },
+  { id:'f2',  name:'桌面预览_最终版.jpg',      size:'856 KB', date:'今天' },
+  { id:'f3',  name:'Screenshot_0616.png',      size:'2.1 MB', date:'昨天' },
+  { id:'f4',  name:'聊天截图_搞笑.jpg',        size:'340 KB', date:'刚刚' },
+  { id:'f5',  name:'截图_课件重点.png',        size:'560 KB', date:'今天' },
+  // 文档类
+  { id:'f6',  name:'课程论文_终稿.docx',        size:'156 KB', date:'昨天' },
+  { id:'f7',  name:'线性代数笔记.md',          size:'12 KB',  date:'今天' },
+  { id:'f8',  name:'第三季度报告_v3.pdf',       size:'3.4 MB', date:'06-15' },
+  { id:'f9',  name:'周报_0616.docx',           size:'48 KB',  date:'昨天' },
+  { id:'f10', name:'项目进度表.xlsx',          size:'256 KB', date:'今天' },
+  { id:'f11', name:'客户合同_审阅版.pdf',       size:'1.8 MB', date:'06-14' },
+  { id:'f12', name:'年度总结PPT.pptx',         size:'12 MB',  date:'06-13' },
+  // 视频类
+  { id:'f13', name:'游戏录屏_高光时刻.mp4',     size:'512 MB', date:'06-13' },
+  { id:'f14', name:'直播剪辑_片段.mp4',         size:'256 MB', date:'昨天' },
+  // 压缩包
+  { id:'f15', name:'项目素材包_v2.zip',         size:'128 MB', date:'06-14' },
+  { id:'f16', name:'备份_202506.zip',          size:'256 MB', date:'06-12' },
+  { id:'f17', name:'数据结构习题答案.zip',       size:'16 MB',  date:'06-10' },
+  // 安装包
+  { id:'f18', name:'SteamSetup.exe',          size:'1.8 MB', date:'06-17' },
+  { id:'f19', name:'ZoteroSetup.exe',         size:'42 MB',  date:'06-01' },
+  { id:'f20', name:'ChromeSetup.exe',         size:'1.8 MB', date:'06-17' },
+  // 设计类
+  { id:'f21', name:'海报设计_终稿.psd',         size:'86 MB',  date:'06-15' },
+  { id:'f22', name:'logo_方案3.ai',           size:'12 MB',  date:'06-14' },
+  // 快捷方式
+  { id:'f23', name:'原神.lnk',                size:'1 KB',   date:'06-10' },
+  { id:'f24', name:'腾讯会议.lnk',             size:'1 KB',   date:'06-10' },
+  // 临时
+  { id:'f25', name:'临时笔记_待整理.txt',       size:'2 KB',   date:'刚刚' },
+  { id:'f26', name:'会议记录_0617.txt',         size:'4 KB',   date:'刚刚' },
+].map(f => ({ ...f, type: recognizeFileType(f.name) }));
+
+let currentFiles = [...SHARED_FILES]; // 三种模式共享同一份桌面文件
+
+// ============ STATE ============
+const currentMode = 'default';
+let isOrganized = false;
+let isPanelOpen = false;
+let organizedFiles = [];
+let petInteractCount = 0;
+let draggedFileId = null;
+let pinnedShortcuts = [];
+// 今日统计（页面级，刷新重置）
+let todayOrganized = 0;
+let todayNewFiles = 0;
+// 最近整理记录 [{time, summary}]
+let organizeRecords = [];
+
+
+const MODE_CONFIG = {
+  default: {
+    accent: '#f9a892',
+    petResponses: [
+      '嘿嘿~ 我在呢！要一起玩点什么吗？✨',
+      '戳我干嘛~ 是想整理桌面了吗？记得把快捷方式拖到 Dock 哦！',
+      '你的桌面小管家随时待命！要整理文件吗？',
+      '哎呀别戳啦~ 不过我很开心你在和我互动！',
+      '唔…桌面有点乱，但我可以帮你搞定！点「看看整理方案」吧~',
+      '呼~ 好悠闲的一天呢！要不趁现在收拾一下桌面？',
+    ],
+    initialPrompt: '桌面好热闹呀~ 想不想让我帮你变个魔术，一键清爽？来看看我的 AI 整理方案吧！',
+    fileClickTemplate: (file, t) => `「${file.name}」是${t.label}类文件~ 要看看整理方案吗？`,
+    organizeDone: '搞定！桌面焕然一新啦~ ✨',
+    priorityType: 'screenshot',
+    priorityHint: '截图类文件较多，优先收纳截图与录屏',
+    walkInterval: [5000, 12000],
+    idleTimeout: 30000,
+  }
+}
+
+// ============ DOM REFS ============
+const filesLayer = document.getElementById('filesLayer');
+const organizePanel = document.getElementById('organizePanel');
+const categoryList = document.getElementById('categoryList');
+const organizeBtn = document.getElementById('organizeBtn');
+const undoBtn = document.getElementById('undoBtn');
+const recentRecords = document.getElementById('recentRecords');
+const recentRecordsList = document.getElementById('recentRecordsList');
+const panelClose = document.getElementById('panelClose');
+const speechBubble = document.getElementById('speechBubble');
+const bubbleText = document.getElementById('bubbleText');
+const bubbleActions = document.getElementById('bubbleActions');
+const petBody = document.getElementById('petBody');
+const petMouth = document.getElementById('petMouth');
+const toast = document.getElementById('toast');
+const desktopFileCount = document.getElementById('desktopFileCount');
+const dockBar = document.getElementById('dockBar');
+const dockTrash = document.getElementById('dockTrash');
+const statClean = document.getElementById('statClean');
+const statBar = document.getElementById('statBar');
+const topbarToday = document.getElementById('topbarToday');
+
+// ============ HELPERS ============
+function debounce(fn,ms) { let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),ms); }; }
+
+function showToast(msg, icon='✨') {
+  toast.innerHTML = `${icon} ${msg}`;
+  toast.classList.add('show');
+  clearTimeout(toast._timeout);
+  toast._timeout = setTimeout(()=>toast.classList.remove('show'), 2200);
+}
+
+// 桌宠情绪：currentMoodShape 是基于整洁度的基础嘴形；互动会临时覆盖
+let currentMoodShape = '';
+let petMoodOverrideUntil = 0;
+
+// 桌宠精灵图动画状态
+let currentPetState = 'idle';
+const PET_STATES = ['idle', 'run-right', 'run-left', 'wave', 'jump', 'failed', 'wait', 'busy', 'review'];
+
+function setPetState(state) {
+  if (!PET_STATES.includes(state)) state = 'idle';
+  currentPetState = state;
+  petBody.classList.remove(...PET_STATES.map(s => 'state-' + s));
+  petBody.classList.add('state-' + state);
+}
+
+function flashPetState(state, duration=1000, thenState='idle') {
+  setPetState(state);
+  setTimeout(() => {
+    if (currentPetState === state) {
+      if (petSleeping) setPetState('wait');
+      else if (thenState !== 'idle') setPetState(thenState);
+      else applyBaseMood();
+    }
+  }, duration);
+}
+
+// 基础情绪 → 精灵图状态：桌面乱时不切状态（避免精灵图持续闪烁），改用气泡表达关心
+function moodShapeToState(shape) {
+  return 'idle';
+}
+
+// 临时反应 → 精灵图状态（用于互动瞬间的短暂表情，属于"动作"）
+function reactionState(shape) {
+  if (shape === 'wow') return 'review';
+  if (shape === 'sad') return 'busy';
+  return 'idle';
+}
+
+function setPetMouth(shape) {
+  // 基础情绪：互动覆盖期、睡眠、走路/挥手/跳跃进行中时不打断
+  if (Date.now() < petMoodOverrideUntil) return;
+  if (petSleeping) return;
+  if (['run-right','run-left','wave','jump'].includes(currentPetState)) return;
+  setPetState(moodShapeToState(shape));
+}
+
+// 互动结束后回到基础情绪
+function applyBaseMood() {
+  if (petSleeping) { setPetState('wait'); return; }
+  setPetState(moodShapeToState(currentMoodShape));
+}
+
+// 互动触发的临时反应，duration 后自动恢复到 idle
+function flashPetMouth(shape, duration=800) {
+  petMoodOverrideUntil = Date.now() + duration;
+  setPetState(reactionState(shape));
+  setTimeout(() => {
+    if (Date.now() >= petMoodOverrideUntil - 50) {
+      petMoodOverrideUntil = 0;
+      applyBaseMood();
+    }
+  }, duration);
+}
+
+// 桌面变乱时的关心气泡（带冷却，不刷屏）
+let lastMessyBubbleAt = 0;
+const MESSY_BUBBLE_MESSAGES = [
+  '桌面有点乱了呢…要帮你整理一下吗？',
+  '唔，文件越堆越多了，需要我出手吗？',
+  '稍微收拾一下会更舒服哦！点「看看整理方案」吧~',
+  '看我把这些文件收纳得整整齐齐~ 要试试吗？',
+];
+
+// 根据整洁度更新桌宠情绪（不打断进行中的互动效果）
+function updatePetMood(tidyPercent) {
+  let shape;
+  if (tidyPercent >= 80) shape = 'happy';
+  else if (tidyPercent >= 55) shape = '';
+  else if (tidyPercent >= 40) shape = 'wow';
+  else shape = 'sad';
+  const prev = currentMoodShape;
+  currentMoodShape = shape;
+  setPetMouth(shape);
+  // 桌面变乱时偶尔气泡提醒（不打断面板/睡眠/已有气泡）
+  if ((shape === 'wow' || shape === 'sad') && prev !== shape) {
+    const now = Date.now();
+    if (now - lastMessyBubbleAt > 30000 && !isPanelOpen && !petSleeping) {
+      lastMessyBubbleAt = now;
+      const msg = MESSY_BUBBLE_MESSAGES[Math.floor(Math.random() * MESSY_BUBBLE_MESSAGES.length)];
+      showBubble(msg);
+      setTimeout(() => { if (!isPanelOpen) hideBubble(); }, 4000);
+    }
+  }
+}
+
+function showBubble(text, actions=null) {
+  bubbleText.textContent=text;
+  bubbleActions.innerHTML='';
+  if (actions) {
+    actions.forEach(a=>{
+      const btn=document.createElement('button');
+      btn.className=`bubble-btn ${a.primary?'primary':'secondary'}`;
+      btn.textContent=a.label;
+      btn.addEventListener('click', a.handler);
+      bubbleActions.appendChild(btn);
+    });
+  }
+  positionBubble();
+  speechBubble.classList.add('show');
+}
+function hideBubble() { speechBubble.classList.remove('show'); }
+
+// 实时把气泡定位到桌宠上方
+function positionBubble() {
+  // 用 .pet-img 精灵图的实际矩形（精灵图高出 pet-body 容器），避免气泡遮挡桌宠头部
+  const petImgEl = document.querySelector('.pet-img');
+  const r = (petImgEl || petBody).getBoundingClientRect();
+  const bw = speechBubble.offsetWidth;
+  const bh = speechBubble.offsetHeight;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  // 桌宠中心
+  const cx = r.left + r.width / 2;
+  // 默认气泡在桌宠精灵图正上方，留 12px 间距
+  let left = cx - bw / 2;
+  let top = r.top - bh - 12;
+  // 屏幕边缘溢出处理
+  if (left + bw > vw - 8) left = vw - 8 - bw;
+  if (left < 8) left = 8;
+  // 桌宠太靠上时，气泡放下方
+  if (top < 8) top = r.bottom + 12;
+  // 箭头水平对准桌宠中心（相对于气泡左边）
+  const arrowX = Math.max(20, Math.min(bw - 20, cx - left));
+  speechBubble.style.setProperty('--arrow-x', arrowX + 'px');
+  speechBubble.style.left = left + 'px';
+  speechBubble.style.top = top + 'px';
+}
+
+// 气泡可见时每帧跟随桌宠
+function bubbleFollowLoop() {
+  if (speechBubble.classList.contains('show')) {
+    positionBubble();
+  }
+  requestAnimationFrame(bubbleFollowLoop);
+}
+requestAnimationFrame(bubbleFollowLoop);
+
+function updateStatusCard() {
+  const fc = currentFiles.length;
+  const barPercent = isOrganized ? 92 : Math.max(30, 100 - fc * 5);
+  statBar.style.width = barPercent + '%';
+  statClean.textContent = isOrganized ? '整洁' : (fc <= 10 ? '良好' : '需整理');
+  statClean.className = 'topbar-clean ' + (isOrganized || fc <= 10 ? 'good' : 'warn');
+  topbarToday.textContent = `今日 整理 ${todayOrganized} · 新增 ${todayNewFiles}`;
+  // 桌宠情绪跟随整洁度
+  updatePetMood(barPercent);
+}
+
+// ============ TIME ============
+function updateTime() {
+  document.getElementById('topbarTime').textContent =
+    new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+}
+updateTime(); setInterval(updateTime, 30000);
+
+// ============ FILE RENDERING ============
+function buildFileIcon(file) {
+  const t = FILE_TYPE_META[file.type];
+  const div = document.createElement('div');
+  div.className = `file-icon ft-${file.type}`;
+  div.dataset.fileId = file.id;
+  div.draggable = true;
+  div.innerHTML = `
+    <div class="file-icon-inner">${t.iconSvg}</div>
+    <span class="file-name">${file.name}</span>
+    <span class="file-type-tag">${t.label}</span>
+    <span class="file-meta">${file.size}</span>
+  `;
+  // Drag handlers
+  div.addEventListener('dragstart', onDragStart);
+  div.addEventListener('dragend', onDragEnd);
+  div.addEventListener('click', (e) => {
+    if (!div.classList.contains('dragging')) onFileClick(file);
+  });
+  return div;
+}
+
+function scatterPositions(files) {
+  const positions = [];
+  const areaW = filesLayer.clientWidth || 880;
+  const areaH = (filesLayer.clientHeight || 460) - 40;
+  const cols = 4;
+  const rows = Math.ceil(files.length / cols);
+  const cellW = areaW / cols;
+  const cellH = Math.min(areaH / rows, 140);
+
+  files.forEach((_, i) => {
+    const col = i % cols; const row = Math.floor(i / cols);
+    const x = col * cellW + 10 + Math.random() * (cellW - 90);
+    const y = 10 + row * cellH + Math.random() * (cellH - 100);
+    positions.push({ x: Math.max(0, Math.min(x, areaW - 84)), y: Math.max(0, Math.min(y, areaH)) });
+  });
+  return positions;
+}
+
+function renderFiles() {
+  filesLayer.innerHTML = '';
+  const positions = scatterPositions(currentFiles);
+  currentFiles.forEach((file, i) => {
+    const el = buildFileIcon(file);
+    el.style.left = positions[i].x + 'px';
+    el.style.top = positions[i].y + 'px';
+    filesLayer.appendChild(el);
+  });
+  desktopFileCount.textContent = `${currentFiles.length} 个文件`;
+  updateStatusCard();
+}
+
+// ============ DRAG & DROP ============
+let dragClone = null;
+let dragOffsetX = 0, dragOffsetY = 0;
+
+function onDragStart(e) {
+  const fileIcon = e.currentTarget;
+  const fileId = fileIcon.dataset.fileId;
+  const file = currentFiles.find(f => f.id === fileId);
+  if (!file) return;
+  draggedFileId = fileId;
+  fileIcon.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', fileId);
+  // Calculate offset
+  const rect = fileIcon.getBoundingClientRect();
+  dragOffsetX = e.clientX - rect.left;
+  dragOffsetY = e.clientY - rect.top;
+  // Create drag image
+  const clone = fileIcon.cloneNode(true);
+  clone.classList.add('drag-preview');
+  clone.style.position = 'fixed';
+  clone.style.left = '-9999px';
+  clone.style.top = '-9999px';
+  clone.style.width = fileIcon.offsetWidth + 'px';
+  document.body.appendChild(clone);
+  dragClone = clone;
+  e.dataTransfer.setDragImage(clone, dragOffsetX, dragOffsetY);
+
+  setTimeout(() => {
+    if (dockTrash) dockTrash.classList.add('dock-trash-highlight');
+  }, 0);
+}
+
+function onDragEnd(e) {
+  const fileIcon = document.querySelector(`.file-icon[data-file-id="${draggedFileId}"]`);
+  if (fileIcon) fileIcon.classList.remove('dragging');
+  draggedFileId = null;
+  if (dragClone) { dragClone.remove(); dragClone = null; }
+  dockBar.classList.remove('drag-over');
+  dockTrash.classList.remove('dock-trash-highlight');
+  document.querySelectorAll('.dock-icon').forEach(d => d.classList.remove('highlight-drop'));
+  document.querySelectorAll('.file-group').forEach(g => g.classList.remove('drag-over'));
+}
+
+// Dock drag events
+dockBar.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  if (!draggedFileId) return;
+  e.dataTransfer.dropEffect = 'move';
+  dockBar.classList.add('drag-over');
+  // Highlight nearest dock icon
+  const dockIcons = dockBar.querySelectorAll('.dock-icon');
+  dockIcons.forEach(d => d.classList.remove('highlight-drop'));
+  const target = document.elementFromPoint(e.clientX, e.clientY);
+  if (target && target.closest('.dock-icon')) {
+    const icon = target.closest('.dock-icon');
+    icon.classList.add('highlight-drop');
+  }
+});
+
+dockBar.addEventListener('dragleave', (e) => {
+  if (!dockBar.contains(e.relatedTarget)) {
+    dockBar.classList.remove('drag-over');
+    document.querySelectorAll('.dock-icon').forEach(d => d.classList.remove('highlight-drop'));
+  }
+});
+
+dockBar.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dockBar.classList.remove('drag-over');
+  dockTrash.classList.remove('dock-trash-highlight');
+  document.querySelectorAll('.dock-icon').forEach(d => d.classList.remove('highlight-drop'));
+  if (!draggedFileId) return;
+
+  const file = currentFiles.find(f => f.id === draggedFileId);
+  if (!file) return;
+
+  const target = document.elementFromPoint(e.clientX, e.clientY);
+  const dockIcon = target?.closest('.dock-icon');
+
+  // Dropped on trash → remove file（删完直接返回，避免后续再 pin）
+  if (dockIcon === dockTrash || target === dockTrash || (dockIcon && dockIcon.title === '回收站')) {
+    const idx = currentFiles.findIndex(f => f.id === draggedFileId);
+    if (idx >= 0) {
+      const removed = currentFiles.splice(idx, 1)[0];
+      showToast(`已删除「${removed.name}」`,'🗑️');
+      flashPetMouth('wow', 800);
+      if (isOrganized) {
+        // Undo organize first
+        document.querySelectorAll('.file-group').forEach(g=>g.classList.remove('show'));
+        isOrganized=false; organizedFiles=[];
+        organizeBtn.textContent='确认整理';
+        organizeBtn.disabled = false;
+        undoBtn.style.display='none';
+      }
+      renderFiles();
+    }
+    return;
+  }
+
+  // Dropped on dock → pin shortcut
+  if (file.type === 'shortcut') {
+    pinToDock(file);
+    showToast(`已将「${file.name}」固定到 Dock`,'📌');
+    petCelebrate();
+    showBubble('快捷方式已固定到 Dock 啦！下次可以快速打开~');
+    setTimeout(()=>hideBubble(), 2500);
+  } else if (dockIcon) {
+    showToast('只有快捷方式(.lnk)可以固定到 Dock','💡');
+    flashPetMouth('wow', 600);
+  }
+});
+
+// Desktop area drop → reposition file
+document.getElementById('desktopArea').addEventListener('dragover', (e) => {
+  e.preventDefault();
+  if (!draggedFileId) return;
+  e.dataTransfer.dropEffect = 'move';
+});
+
+document.getElementById('desktopArea').addEventListener('drop', (e) => {
+  e.preventDefault();
+  if (!draggedFileId || isOrganized) return;
+  const fileIcon = document.querySelector(`.file-icon[data-file-id="${draggedFileId}"]`);
+  if (!fileIcon) return;
+  const areaRect = document.getElementById('desktopArea').getBoundingClientRect();
+  const newLeft = e.clientX - areaRect.left - dragOffsetX;
+  const newTop = e.clientY - areaRect.top - dragOffsetY;
+  const maxW = areaRect.width - 84;
+  const maxH = areaRect.height - 100;
+  fileIcon.style.left = Math.max(0, Math.min(newLeft, maxW)) + 'px';
+  fileIcon.style.top = Math.max(0, Math.min(newTop, maxH)) + 'px';
+});
+
+function pinToDock(file) {
+  if (pinnedShortcuts.includes(file.id)) return;
+  pinnedShortcuts.push(file.id);
+  const dockIcon = document.createElement('div');
+  dockIcon.className = 'dock-icon pinned-shortcut';
+  dockIcon.title = file.name;
+  dockIcon.dataset.pinnedId = file.id;
+  dockIcon.innerHTML = `<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/><polyline points="13 11 14.5 9.5"/></svg><span class="pin-dot"></span>`;
+  dockIcon.addEventListener('click', () => {
+    showToast(`启动「${file.name}」`,'🚀');
+  });
+  // Insert before trash
+  dockBar.insertBefore(dockIcon, dockTrash);
+}
+
+// ============ GROUP LAYOUT ALIGNMENT ============
+let groupLayoutAlign = 'center'; // left | center | right
+let groupsHidden = false; // 是否隐藏收纳区容器（保留布局按钮和文件图标层）
+
+// 切换收纳区显示/隐藏（不影响文件图标，只隐藏收纳容器）
+function toggleGroupsHide(forceState) {
+  const next = (typeof forceState === 'boolean') ? forceState : !groupsHidden;
+  groupsHidden = next;
+  const area = document.getElementById('desktopArea');
+  const btn = document.getElementById('hideGroupsBtn');
+  if (!area || !btn) return;
+  area.classList.toggle('hide-groups', next);
+  btn.classList.toggle('hide-on', next);
+  btn.textContent = next ? '显示' : '隐藏';
+  btn.title = next ? '显示收纳区' : '隐藏收纳区';
+}
+
+// ====== 统一布局常量：所有 group 容器尺寸一致，图标按 3×N 网格摆放 ======
+const GROUP_W = 220, GROUP_H = 170;
+const GROUP_GAP_X = 14, GROUP_GAP_Y = 16;
+const GROUP_ICON_OFFSET_X = 14, GROUP_ICON_OFFSET_Y = 22;
+const GROUP_ICON_COL_W = 62, GROUP_ICON_ROW_H = 58;
+const GROUP_ICONS_PER_ROW = 3;
+const GROUP_VISIBLE_ICONS = 6; // 容器可见前 6 个，超出用 +N 角标
+
+const GROUP_ORDER = ['group-screenshot','group-doc','group-archive','group-installer','group-video','group-temp'];
+
+// 根据 align 计算 6 个 group 容器的位置（统一尺寸，避免重叠）
+function computeGroupPositions(align) {
+  const layerW = filesLayer.clientWidth || 880;
+  const totalW = 3 * GROUP_W + 2 * GROUP_GAP_X; // 3 列总宽
+  let startLeft;
+  if (align === 'left')        startLeft = 16;
+  else if (align === 'right')  startLeft = Math.max(16, layerW - totalW - 16);
+  else                         startLeft = Math.max(0, (layerW - totalW) / 2); // center
+  const top1 = 20;
+  const top2 = top1 + GROUP_H + GROUP_GAP_Y;
+  return [
+    { left: startLeft,                              top: top1 },
+    { left: startLeft + GROUP_W + GROUP_GAP_X,      top: top1 },
+    { left: startLeft + 2 * (GROUP_W + GROUP_GAP_X), top: top1 },
+    { left: startLeft,                              top: top2 },
+    { left: startLeft + GROUP_W + GROUP_GAP_X,      top: top2 },
+    { left: startLeft + 2 * (GROUP_W + GROUP_GAP_X), top: top2 },
+  ];
+}
+
+// 统一布局入口：摆放 group 容器 + 同步图标位置
+function applyGroupLayout(align) {
+  groupLayoutAlign = align;
+  document.querySelectorAll('.layout-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.align === align);
+  });
+  if (!isOrganized) return; // 未整理时不摆容器
+
+  const positions = computeGroupPositions(align);
+
+  // 摆 group 容器
+  GROUP_ORDER.forEach((gid, i) => {
+    const g = document.getElementById(gid);
+    if (g && g.classList.contains('show')) {
+      g.style.left = positions[i].left + 'px';
+      g.style.top = positions[i].top + 'px';
+    }
+  });
+
+  // 摆图标：移入对应 group DOM 内（坐标相对 group），badge/label 通过 z-index 在图标上方可点击
+  const typeIdx = {};
+  document.querySelectorAll('.file-icon').forEach(el => {
+    const file = currentFiles.find(f => f.id === el.dataset.fileId);
+    if (!file) return;
+    const gid = getFileGroup(file);
+    const gi = GROUP_ORDER.indexOf(gid);
+    if (gi < 0) return;
+    if (typeIdx[gid] === undefined) typeIdx[gid] = 0;
+    const idx = typeIdx[gid]++;
+    // 坐标相对 group（图标在 group DOM 内）
+    el.style.left = (GROUP_ICON_OFFSET_X + (idx % GROUP_ICONS_PER_ROW) * GROUP_ICON_COL_W) + 'px';
+    el.style.top  = (GROUP_ICON_OFFSET_Y + Math.floor(idx / GROUP_ICONS_PER_ROW) * GROUP_ICON_ROW_H) + 'px';
+    // 容器只能放 GROUP_VISIBLE_ICONS 个，超出的隐藏（点击 +N 角标可在展开面板查看）
+    el.style.display = idx < GROUP_VISIBLE_ICONS ? '' : 'none';
+    // 移入 group DOM，确保 badge/label 在图标上方可点击
+    const group = document.getElementById(gid);
+    if (group && el.parentElement !== group) group.appendChild(el);
+  });
+}
+
+// 更新每个 group 的 +N 角标（超出可见数量的文件数）
+function updateGroupBadges() {
+  const counts = {};
+  currentFiles.forEach(f => {
+    const gid = getFileGroup(f);
+    counts[gid] = (counts[gid] || 0) + 1;
+  });
+  GROUP_ORDER.forEach(gid => {
+    const total = counts[gid] || 0;
+    const overflow = Math.max(0, total - GROUP_VISIBLE_ICONS);
+    const badge = document.querySelector(`.file-group-more[data-group="${gid}"]`);
+    if (!badge) return;
+    if (overflow > 0) {
+      badge.textContent = '+' + overflow;
+      badge.classList.add('show');
+    } else {
+      badge.classList.remove('show');
+    }
+  });
+}
+
+// ====== 收纳区展开 modal（手机文件夹式：点击 +N 角标查看全部） ======
+const groupExpandOverlay = document.getElementById('groupExpandOverlay');
+const groupExpandTitle    = document.getElementById('groupExpandTitle');
+const groupExpandCount    = document.getElementById('groupExpandCount');
+const groupExpandBody      = document.getElementById('groupExpandBody');
+const groupExpandClose     = document.getElementById('groupExpandClose');
+
+function openGroupExpand(gid) {
+  const groupEl = document.getElementById(gid);
+  if (!groupEl) return;
+  const label = groupEl.querySelector('.file-group-label')?.textContent || '收纳区';
+  const files = currentFiles.filter(f => getFileGroup(f) === gid);
+
+  groupExpandTitle.textContent = label;
+  groupExpandCount.textContent  = files.length ? `共 ${files.length} 个文件` : '暂无文件';
+  groupExpandBody.innerHTML = '';
+
+  if (files.length === 0) {
+    groupExpandBody.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--text-secondary);padding:40px 0;font-size:13px;">该收纳区暂无文件</div>';
+  } else {
+    files.forEach(file => {
+      const icon = buildFileIcon(file);
+      icon.classList.add('organized');
+      // 展开面板内的图标禁用拖拽，避免误操作
+      icon.draggable = false;
+      icon.removeAttribute('draggable');
+      // 误判修正入口：hover 显示「换分类」按钮
+      const btn = document.createElement('button');
+      btn.className = 'reclassify-btn';
+      btn.textContent = '换分类';
+      btn.title = '这个分类不对？换个分类';
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openReclassifyMenu(file, btn);
+      });
+      icon.appendChild(btn);
+      groupExpandBody.appendChild(icon);
+    });
+  }
+
+  groupExpandOverlay.dataset.currentGid = gid;
+  groupExpandOverlay.classList.add('show');
+}
+
+function closeGroupExpand() {
+  groupExpandOverlay.classList.remove('show');
+  groupExpandBody.innerHTML = '';
+  closeReclassifyMenu();
+}
+
+// 误判修正：换个分类
+const reclassifyMenu = document.getElementById('reclassifyMenu');
+const reclassifyMenuList = document.getElementById('reclassifyMenuList');
+let reclassifyTargetFileId = null;
+
+function openReclassifyMenu(file, anchorEl) {
+  reclassifyTargetFileId = file.id;
+  const currentGid = getFileGroup(file);
+  reclassifyMenuList.innerHTML = ALL_GROUP_IDS.map(gid => {
+    const isCurrent = gid === currentGid;
+    return `<div class="reclassify-menu-item ${isCurrent ? 'current' : ''}" data-gid="${gid}">${getGroupLabel(gid)}${isCurrent ? ' ✓' : ''}</div>`;
+  }).join('');
+  reclassifyMenuList.querySelectorAll('.reclassify-menu-item').forEach(item => {
+    item.addEventListener('click', () => {
+      reclassifyFile(file.id, item.dataset.gid);
+      closeReclassifyMenu();
+    });
+  });
+  const rect = anchorEl.getBoundingClientRect();
+  reclassifyMenu.style.display = '';
+  const menuW = reclassifyMenu.offsetWidth;
+  let left = rect.right - menuW;
+  let top = rect.bottom + 4;
+  if (top + 200 > window.innerHeight) top = rect.top - 200;
+  if (left < 8) left = 8;
+  reclassifyMenu.style.left = left + 'px';
+  reclassifyMenu.style.top = top + 'px';
+}
+function closeReclassifyMenu() {
+  reclassifyMenu.style.display = 'none';
+  reclassifyTargetFileId = null;
+}
+document.addEventListener('click', (e) => {
+  if (reclassifyMenu.style.display === 'none') return;
+  if (!reclassifyMenu.contains(e.target) && !e.target.classList.contains('reclassify-btn')) {
+    closeReclassifyMenu();
+  }
+});
+function reclassifyFile(fileId, newGroupId) {
+  const f = currentFiles.find(x => x.id === fileId);
+  if (!f) return;
+  const oldGid = getFileGroup(f);
+  if (oldGid === newGroupId) return;
+  f.manualGroup = newGroupId;
+  if (isOrganized) {
+    applyGroupLayout(groupLayoutAlign);
+    updateGroupBadges();
+  }
+  const cur = groupExpandOverlay.dataset.currentGid;
+  if (cur) openGroupExpand(cur);
+  showToast(`已将「${f.name}」移至「${getGroupLabel(newGroupId)}」`, '🔄');
+}
+
+// 点击 +N 角标展开
+document.querySelectorAll('.file-group-more').forEach(badge => {
+  badge.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openGroupExpand(badge.dataset.group);
+  });
+});
+// 点击 group 标题展开；双击重命名（用 220ms 延迟区分单击/双击）
+let labelClickTimer = null;
+function startRenameLabel(label) {
+  const oldText = label.textContent.trim();
+  label.contentEditable = 'true';
+  label.classList.add('editing');
+  label.focus();
+  const range = document.createRange();
+  range.selectNodeContents(label);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+  const finish = () => {
+    label.contentEditable = 'false';
+    label.classList.remove('editing');
+    const newText = label.textContent.trim() || oldText;
+    label.textContent = newText;
+    label.removeEventListener('blur', finish);
+    label.removeEventListener('keydown', onKey);
+  };
+  const onKey = (ev) => {
+    if (ev.key === 'Enter') { ev.preventDefault(); label.blur(); }
+    if (ev.key === 'Escape') { label.textContent = oldText; label.blur(); }
+  };
+  label.addEventListener('blur', finish);
+  label.addEventListener('keydown', onKey);
+}
+document.querySelectorAll('.file-group-label').forEach(label => {
+  label.title = '单击展开 · 双击重命名';
+  label.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (labelClickTimer) return;
+    labelClickTimer = setTimeout(() => {
+      labelClickTimer = null;
+      openGroupExpand(label.parentElement.id);
+    }, 220);
+  });
+  label.addEventListener('dblclick', (e) => {
+    e.stopPropagation();
+    if (labelClickTimer) { clearTimeout(labelClickTimer); labelClickTimer = null; }
+    startRenameLabel(label);
+  });
+});
+// 关闭：关闭按钮 / 点击遮罩
+groupExpandClose.addEventListener('click', closeGroupExpand);
+groupExpandOverlay.addEventListener('click', (e) => {
+  if (e.target === groupExpandOverlay) closeGroupExpand();
+});
+// Esc 关闭
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && groupExpandOverlay.classList.contains('show')) closeGroupExpand();
+});
+
+// ============ ORGANIZATION ============
+function getCategoryGroups() {
+  const groups = {};
+  currentFiles.forEach(f => {
+    const t = FILE_TYPE_META[f.type];
+    const key = t.catName;
+    if (!groups[key]) groups[key] = { files:[], type:f.type, emoji:t.emoji, color:t.color, iconSvg:t.iconSvg };
+    groups[key].files.push(f);
+  });
+  return Object.entries(groups);
+}
+
+function renderCategoryPanel() {
+  const groups = getCategoryGroups();
+  // 模式重点类别置顶
+  const cfg = MODE_CONFIG[currentMode];
+  const priorityType = cfg.priorityType;
+  groups.sort((a, b) => {
+    const aPriority = a[1].type === priorityType ? 0 : 1;
+    const bPriority = b[1].type === priorityType ? 0 : 1;
+    if (aPriority !== bPriority) return aPriority - bPriority;
+    return b[1].files.length - a[1].files.length;
+  });
+  categoryList.innerHTML = '';
+  groups.forEach(([name, g]) => {
+    const isPriority = g.type === priorityType;
+    const item = document.createElement('div');
+    item.className = 'category-item' + (isPriority ? ' priority' : '');
+    item.innerHTML = `
+      <div class="category-icon" style="background:${g.color}22; color:${g.color};">${g.iconSvg}</div>
+      <div class="category-info">
+        <div class="category-name">${name}${isPriority ? ' <span class="priority-badge">重点</span>' : ''}</div>
+        <div class="category-count">${g.files.length} 个 · ${g.files.map(f=>f.name).join('、')}</div>
+      </div>
+    `;
+    categoryList.appendChild(item);
+  });
+}
+
+// 渲染 AI 智能识别摘要卡：总数 / Top 类型 / 模式重点 / 预计整洁度提升
+function renderAISuggestion() {
+  const groups = getCategoryGroups();
+  const total = currentFiles.length;
+  const sorted = groups.slice().sort((a,b) => b[1].files.length - a[1].files.length);
+  const top = sorted.slice(0, 4);
+
+  const summary = document.getElementById('suggestionSummary');
+  const types = document.getElementById('suggestionTypes');
+  const forecast = document.getElementById('suggestionForecast');
+
+  summary.textContent = `已识别 ${total} 个文件 · 建议分为 ${groups.length} 类`;
+
+  types.innerHTML = top.map(([name, g]) =>
+    `<span class="suggestion-type-chip">${g.emoji} ${name}<strong>${g.files.length}</strong></span>`
+  ).join('');
+
+  const cfg = MODE_CONFIG[currentMode];
+  const fc = currentFiles.length;
+  const currentTidy = isOrganized ? 92 : Math.max(30, 100 - fc * 5);
+  const doneText = isOrganized ? '已完成' : '预测整理后';
+  forecast.innerHTML = `${doneText}整洁度 <strong>${isOrganized ? 92 : currentTidy}%${isOrganized ? '' : ' → 92%'}</strong>${isOrganized ? '' : '，桌宠会开心哦~'}<br><span style="color:var(--mode-accent)">🎯 ${cfg.priorityHint}</span>`;
+}
+
+// 最近整理记录
+function addRecentRecord(summary) {
+  const now = new Date();
+  const time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+  organizeRecords.unshift({ time, summary });
+  if (organizeRecords.length > 10) organizeRecords.pop();
+}
+function renderRecentRecords() {
+  if (!organizeRecords.length) { recentRecords.style.display = 'none'; return; }
+  recentRecords.style.display = '';
+  recentRecordsList.innerHTML = organizeRecords.map(r =>
+    `<div class="recent-record-item"><span class="rr-time">${r.time}</span><span class="rr-summary">${r.summary}</span></div>`
+  ).join('');
+}
+
+function openOrganizePanel() {
+  hideBubble();
+  renderCategoryPanel();
+  renderAISuggestion();
+  renderRecentRecords();
+  organizePanel.classList.add('open');
+  isPanelOpen = true;
+  organizeBtn.style.display = '';
+  organizeBtn.textContent = isOrganized ? '已整理 ✓' : '确认整理';
+  organizeBtn.disabled = isOrganized;
+  undoBtn.style.display = isOrganized ? '' : 'none';
+}
+function closeOrganizePanel() {
+  organizePanel.classList.remove('open');
+  isPanelOpen = false;
+}
+panelClose.addEventListener('click', closeOrganizePanel);
+
+function doOrganize() {
+  organizedFiles = [];
+  document.querySelectorAll('.file-icon').forEach(el => {
+    organizedFiles.push({ id: el.dataset.fileId, left: el.style.left, top: el.style.top });
+    el.classList.add('organized');
+  });
+  document.querySelectorAll('.file-group').forEach(g => g.classList.add('show'));
+
+  // 先标记已整理，applyGroupLayout 内部依赖此状态才会摆放容器和图标
+  isOrganized = true;
+  todayOrganized++;
+
+  // 统一尺寸布局：容器固定 220×170，图标按 3×N 网格堆叠（超出 6 个隐藏，由 +N 角标替代）
+  updateGroupBadges();                       // 设置 +N 角标
+  applyGroupLayout(groupLayoutAlign);       // 摆放容器和图标
+
+  // 记录本次整理摘要
+  const groupCount = document.querySelectorAll('.file-group.show').length;
+  addRecentRecord(`收纳 ${currentFiles.length} 个文件 → ${groupCount} 个分区`);
+
+  organizeBtn.textContent = '已整理 ✓';
+  organizeBtn.disabled = true;
+  undoBtn.style.display = '';
+  renderAISuggestion();
+  updateStatusCard();
+
+  setTimeout(() => {
+    if (settingsState.autoClose === 'on') closeOrganizePanel();
+    petCelebrate();
+    setTimeout(() => { if (!isPanelOpen && !petSleeping) petSpin(); }, 750);
+    const cfg = MODE_CONFIG[currentMode];
+    showBubble(cfg.organizeDone + ' 如果想恢复，随时可以撤销哦');
+    setTimeout(() => { if (!isPanelOpen) hideBubble(); }, 3500);
+    showToast('整理完成！共整理了 ' + currentFiles.length + ' 个文件', '✅');
+    document.getElementById('layoutControl').classList.add('show');
+  }, 300);
+}
+
+function doUndo() {
+  document.getElementById('layoutControl').classList.remove('show');
+  document.querySelectorAll('.file-group').forEach(g => {
+    g.classList.remove('show');
+    g.dataset.dragReady = '';
+  });
+  document.querySelectorAll('.file-group-more').forEach(b => b.classList.remove('show'));
+  document.querySelectorAll('.file-icon').forEach((el, i) => {
+    el.classList.remove('organized');
+    el.style.display = '';  // 恢复显示（撤销后所有图标都可见）
+    // 移回 filesLayer（整理时图标被移入 group DOM）
+    if (el.parentElement !== filesLayer) filesLayer.appendChild(el);
+    const saved = organizedFiles.find(f => f.id === el.dataset.fileId);
+    if (saved) {
+      setTimeout(() => { el.style.left = saved.left; el.style.top = saved.top; }, i * 70);
+    }
+  });
+  isOrganized = false; organizedFiles = [];
+  organizeBtn.textContent = '确认整理';
+  organizeBtn.disabled = false;
+  undoBtn.style.display = 'none';
+  toggleGroupsHide(false); // 撤销后重置隐藏态
+  renderAISuggestion();
+  updateStatusCard();
+  setTimeout(() => {
+    showBubble('已恢复整理前的样子~ 桌面又回到原来的状态啦');
+    setTimeout(() => { if (!isPanelOpen) hideBubble(); }, 3000);
+    showToast('已撤销整理', '↩️');
+  }, currentFiles.length * 70 + 300);
+}
+
+organizeBtn.addEventListener('click', doOrganize);
+undoBtn.addEventListener('click', doUndo);
+
+// ============ SIMULATE DOWNLOAD（演示"文件下载到桌面后去哪个板块"）============
+const DOWNLOAD_POOL = [
+  { name:'下载_新建项目.zip',    size:'24 MB' },
+  { name:'微信图片_20250625.jpg', size:'480 KB' },
+  { name:'会议纪要_0625.docx',   size:'36 KB' },
+  { name:'B站视频_教程.mp4',     size:'180 MB' },
+  { name:'设计稿_v1.psd',       size:'48 MB' },
+  { name:'NotionSetup.exe',     size:'78 MB' },
+  { name:'待办清单.txt',        size:'2 KB' },
+  { name:'截图_0625_001.png',   size:'1.4 MB' },
+  { name:'参考资料.pdf',        size:'5.6 MB' },
+  { name:'Fluffy.lnk',         size:'1 KB' },
+  { name:'备份_临时.zip',       size:'512 MB' },
+  { name:'桌面壁纸.jpg',        size:'3.2 MB' },
+];
+
+const dockDownload = document.getElementById('dockDownload');
+dockDownload.addEventListener('click', () => {
+  const pick = DOWNLOAD_POOL[Math.floor(Math.random() * DOWNLOAD_POOL.length)];
+  const newFile = {
+    id: 'd' + Date.now(),
+    name: pick.name,
+    size: pick.size,
+    date: '刚刚',
+    type: recognizeFileType(pick.name),
+  };
+  // 共享文件集：所有模式都会看到这个新文件
+  currentFiles.push(newFile);
+  SHARED_FILES.push(newFile);
+  todayNewFiles++;
+
+  // 若整理面板开着，先关掉让用户看到新文件落位
+  if (isPanelOpen) closeOrganizePanel();
+  // 若当前模式已整理，下载新文件会打破整理状态
+  if (isOrganized) {
+    isOrganized = false;
+    organizedFiles = [];
+    document.querySelectorAll('.file-group').forEach(g => g.classList.remove('show'));
+    document.getElementById('layoutControl').classList.remove('show');
+    organizeBtn.textContent = '确认整理';
+    organizeBtn.disabled = false;
+    undoBtn.style.display = 'none';
+  }
+  renderFiles();
+
+  const t = FILE_TYPE_META[newFile.type];
+  const cfg = MODE_CONFIG[currentMode];
+  showToast(`「${newFile.name}」已下载到桌面 · 自动识别为${t.label}`, '⬇️');
+  // 桌宠偷看新文件：朝文件方向瞥一眼
+  const newIcon = document.querySelector(`.file-icon[data-file-id="${newFile.id}"]`);
+  if (newIcon) {
+    const r = newIcon.getBoundingClientRect();
+    petPeekAt(r.left + r.width / 2);
+  } else {
+    flashPetMouth('wow', 1000);
+  }
+  showBubble(`新文件来啦~「${newFile.name}」我识别为${t.label}类，整理时会归到「${t.catName}」区哦！`, [
+    { label: '看看整理方案', primary: true, handler: openOrganizePanel },
+    { label: '稍后再说', primary: false, handler: hideBubble },
+  ]);
+  resetIdleTimer();
+});
+
+// ============ FILE CLICK ============
+function onFileClick(file) {
+  const t = FILE_TYPE_META[file.type];
+  showToast(`已选中「${file.name}」· ${t.label} · ${file.size}`,'📎');
+  if (!isOrganized) {
+    const cfg = MODE_CONFIG[currentMode];
+    showBubble(cfg.fileClickTemplate(file, t), [
+      { label: '预览方案', primary: true, handler: openOrganizePanel },
+      { label: '稍后再说', primary: false, handler: hideBubble },
+    ]);
+  }
+}
+
+// ============ PET INTERACTIONS ============
+let petSleeping = false;
+let petIdleTimer = null;
+let petWalkTimer = null;
+let petDragActive = false;
+let petDragStartX = 0, petDragStartY = 0;
+let petOrigLeft = 0, petOrigTop = 0;
+
+const petContainer = document.getElementById('petContainer');
+ const petZzz = document.getElementById('petZzz');
+ const petHearts = document.getElementById('petHearts');
+
+// Pet drag
+petContainer.addEventListener('mousedown', (e) => {
+  if (e.target.closest('.bubble-btn')) return;
+  if (e.detail >= 2) return; // double-click handled separately
+  petDragActive = true;
+  petContainer.classList.add('dragging');
+  petDragStartX = e.clientX;
+  petDragStartY = e.clientY;
+  petOrigLeft = parseInt(petContainer.style.left) || 0;
+  petOrigTop = parseInt(petContainer.style.top) || 0;
+  if (!petContainer.style.left) {
+    const r = petContainer.getBoundingClientRect();
+    petOrigLeft = r.left;
+    petOrigTop = r.top;
+    petContainer.style.left = petOrigLeft + 'px';
+    petContainer.style.top = petOrigTop + 'px';
+    petContainer.style.right = 'auto';
+    petContainer.style.bottom = 'auto';
+  }
+});
+document.addEventListener('mousemove', (e) => {
+  if (!petDragActive) return;
+  petContainer.style.left = (petOrigLeft + e.clientX - petDragStartX) + 'px';
+  petContainer.style.top = (petOrigTop + e.clientY - petDragStartY) + 'px';
+});
+document.addEventListener('mouseup', () => {
+  if (petDragActive) {
+    petContainer.classList.remove('dragging');
+    petDragActive = false;
+    resetIdleTimer();
+  }
+});
+
+// Double-click to feed
+ petBody.addEventListener('dblclick', (e) => {
+   e.stopPropagation(); e.preventDefault();
+   spawnHearts(8);
+    flashPetState('jump', 700);
+   showBubble('好吃好吃！你真是个好主人~ ❤️');
+   setTimeout(() => hideBubble(), 2000);
+   resetIdleTimer();
+ });
+
+ // Single click
+ petBody.addEventListener('click', (e) => {
+   if (petDragActive) return;
+   if (e.detail >= 2) return;
+   wakeUpPet();
+   petInteractCount++;
+   flashPetState('wave', 1000);
+    spawnSparkles(4);
+  const cfg = MODE_CONFIG[currentMode];
+  const responses = cfg.petResponses;
+  showBubble(responses[petInteractCount % responses.length], [
+    { label: '看看整理方案', primary: true, handler: openOrganizePanel },
+    { label: '先不用~', primary: false, handler: hideBubble },
+  ]);
+  resetIdleTimer();
+});
+
+function spawnHearts(count) {
+  petHearts.innerHTML = '';
+  const hearts = ['❤️','💕','💖','💗','💝'];
+  for (let i = 0; i < count; i++) {
+    const h = document.createElement('span');
+    h.className = 'pet-heart';
+    h.textContent = hearts[Math.floor(Math.random() * hearts.length)];
+    h.style.left = ((Math.random() - 0.5) * 80) + 'px';
+    h.style.animationDelay = (i * 0.06) + 's';
+    petHearts.appendChild(h);
+    setTimeout(() => h.remove(), 1100);
+  }
+}
+
+// Autonomous behavior
+function resetIdleTimer() {
+  clearTimeout(petIdleTimer);
+  clearTimeout(petWalkTimer);
+  wakeUpPet();
+  const cfg = MODE_CONFIG[currentMode];
+  const idleMs = cfg ? cfg.idleTimeout : 25000;
+  petIdleTimer = setTimeout(startSleeping, idleMs);
+  scheduleWalk();
+}
+
+function scheduleWalk() {
+  clearTimeout(petWalkTimer);
+  if (petSleeping || petDragActive) return;
+  const [min, max] = WALK_FREQ_INTERVAL[settingsState.walkFreq] || [5000, 12000];
+  petWalkTimer = setTimeout(doWalk, min + Math.random() * (max - min));
+}
+
+// 读取桌宠当前位置；首次未定位时从 getBoundingClientRect 换算，避免瞬移
+function getPetPos() {
+  if (petContainer.style.left !== '' && petContainer.style.top !== '') {
+    return {
+      x: parseFloat(petContainer.style.left) || 0,
+      y: parseFloat(petContainer.style.top) || 0,
+    };
+  }
+  const r = petContainer.getBoundingClientRect();
+  return { x: r.left, y: r.top };
+}
+
+function doWalk() {
+  if (petSleeping || petDragActive || isPanelOpen) { scheduleWalk(); return; }
+  const area = document.getElementById('desktopArea');
+  const aw = area.clientWidth - 100;
+  const ah = area.clientHeight - 100;
+  let tx = 40 + Math.random() * aw;
+  let ty = 40 + Math.random() * ah;
+  let nudgeDock = false;
+  // 25% 概率蹭到 Dock 边待一会儿
+  if (Math.random() < 0.25) {
+    const dock = document.getElementById('dockBar');
+    const dr = dock.getBoundingClientRect();
+    tx = Math.max(60, Math.min(dr.left + dr.width / 2, window.innerWidth - 60));
+    ty = Math.max(40, dr.top - 100);
+    nudgeDock = true;
+  }
+
+  // 先锁定到旧位置（首次走时把 bottom/right 换算成 left/top，避免瞬移）
+  const old = getPetPos();
+  petContainer.style.left = old.x + 'px';
+  petContainer.style.top = old.y + 'px';
+  petContainer.style.right = 'auto';
+  petContainer.style.bottom = 'auto';
+
+  // 用旧位置到新位置的真实距离算时长
+  const dist = Math.hypot(tx - old.x, ty - old.y);
+  const dur = Math.max(600, Math.min(2000, dist * 3));
+
+  petContainer.style.transition = `left ${dur}ms linear, top ${dur}ms linear`;
+  // 根据移动方向设置跑步动画
+  const dir = tx > old.x ? 'run-right' : 'run-left';
+  setPetState(dir);
+  // 下一帧再设置目标，确保 transition 触发
+  requestAnimationFrame(() => {
+    petContainer.style.left = tx + 'px';
+    petContainer.style.top = ty + 'px';
+  });
+  setTimeout(() => {
+    if (petSleeping) setPetState('wait');
+    else if (nudgeDock) { flashPetState('wave', 1200); } // 蹭一下 Dock
+    else applyBaseMood();
+    petContainer.style.transition = '';
+    scheduleWalk();
+  }, dur);
+}
+
+function startSleeping() {
+   if (petDragActive || isPanelOpen) { resetIdleTimer(); return; }
+   petSleeping = true;
+   petBody.classList.add('sleeping');
+   setPetState('wait');
+   petZzz.classList.add('show');
+ }
+
+ function wakeUpPet() {
+   if (!petSleeping) return;
+   petSleeping = false;
+   petBody.classList.remove('sleeping');
+   applyBaseMood();
+   petZzz.classList.remove('show');
+ }
+
+ function petCelebrate() {
+   wakeUpPet();
+   flashPetState('jump', 700);
+   spawnSparkles(6);
+   resetIdleTimer();
+ }
+
+// 整理完成转圈庆祝
+function petSpin() {
+  wakeUpPet();
+  petBody.classList.add('spinning');
+  spawnSparkles(4);
+  setTimeout(() => {
+    petBody.classList.remove('spinning');
+    applyBaseMood();
+  }, 800);
+  resetIdleTimer();
+}
+
+// 新文件偷看：朝目标方向短暂 review
+function petPeekAt(targetX) {
+  const old = getPetPos();
+  const dir = targetX > old.x ? 'run-right' : 'run-left';
+  flashPetState(dir, 400, 'review');
+  setTimeout(() => flashPetState('review', 1000), 400);
+}
+
+function spawnSparkles(count) {
+  const c = document.getElementById('petContainer');
+  const emojis = ['✨','💫','⭐','🌟'];
+  for (let i = 0; i < count; i++) {
+    const s = document.createElement('span');
+    s.className = 'pet-sparkle';
+    s.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    s.style.left = (15 + Math.random() * 70) + '%';
+    s.style.top = (5 + Math.random() * 40) + '%';
+    s.style.animationDelay = (i * 0.06) + 's';
+    c.appendChild(s);
+    setTimeout(() => s.remove(), 700);
+  }
+}
+
+function showInitialPrompt() {
+  // 初始提示由说明弹窗关闭后触发（closeIntroAndPrompt），这里无需操作
+}
+
+// ============ KEYBOARD ============
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') { if (isPanelOpen) closeOrganizePanel(); hideBubble(); }
+  if (e.key === 'o' && e.ctrlKey && !isPanelOpen) { e.preventDefault(); openOrganizePanel(); }
+});
+
+// Layout control click handler
+document.getElementById('layoutControl').addEventListener('click', (e) => {
+  if (e.target.classList.contains('layout-btn') && e.target.dataset.align) {
+    applyGroupLayout(e.target.dataset.align);
+  }
+});
+
+// 隐藏/显示收纳区
+document.getElementById('hideGroupsBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  toggleGroupsHide();
+});
+
+// ============ INIT ============
+function init() {
+  renderFiles();          // 内部会调用 updateStatusCard → updatePetMood 设置初始情绪
+  showInitialPrompt();
+setPetState("idle");
+  resetIdleTimer();
+  console.log('🐾 栖序 Demo v3 已就绪 — 桌宠升级版');
+  console.log('  - 所有文件图标已替换为 SVG 矢量图标');
+  console.log('  - 支持扩展名+文件名模式双重类型识别');
+  console.log('  - 顶部状态栏实时显示整洁度与文件计数');
+  console.log('  - 文件可拖放：桌面任意位置 / Dock 固定快捷方式 / 回收站删除');
+  finishLoading();
+}
+
+window.addEventListener('resize', debounce(() => { if (!isOrganized) renderFiles(); }, 300));
+init();
+</script>
+</body>
+</html>
