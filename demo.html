@@ -291,6 +291,7 @@
   .topbar-clean.warn { color: #e8c97e; }
   .topbar-bar { width: 60px; height: 3px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; }
   .topbar-bar-fill { height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--mode-accent), var(--accent-teal)); transition: width 0.6s ease; }
+  .topbar-today { font-size: 11px; color: var(--text-secondary); opacity: 0.85; letter-spacing: 0.2px; }
 
   /* ============ DESKTOP AREA ============ */
   .desktop-area { position: fixed; inset: 44px 0 64px 0; z-index: 1; }
@@ -394,6 +395,7 @@
     backdrop-filter: blur(6px);
   }
   .file-group-label:hover { color: var(--text-primary); background: rgba(0,0,0,0.5); }
+  .file-group-label.editing { background: rgba(0,0,0,0.6); color: var(--text-primary); outline: 1px solid var(--mode-accent); cursor: text; user-select: text; }
   /* +N 角标：点击展开 modal 查看全部 */
   .file-group-more {
     position: absolute; right: 10px; bottom: 10px; z-index: 5;
@@ -486,6 +488,31 @@
     content: ''; position: absolute; bottom: -3px; width: 4px; height: 4px;
     border-radius: 50%; background: var(--mode-accent);
   }
+  /* 通用 hover 标签 */
+  .dock-icon[data-tip]::before {
+    content: attr(data-tip);
+    position: absolute; top: -30px; left: 50%; transform: translateX(-50%) translateY(4px);
+    font-size: 11px; line-height: 1; padding: 5px 9px; border-radius: 8px;
+    background: rgba(22,22,42,0.95); color: var(--text-primary); white-space: nowrap;
+    opacity: 0; transition: all 0.25s ease; pointer-events: none;
+    font-weight: 500; letter-spacing: 0.3px;
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.35);
+  }
+  .dock-icon[data-tip]:hover::before { opacity: 1; transform: translateX(-50%) translateY(0); }
+  /* 点击弹跳 */
+  .dock-icon.bouncing { animation: dockBounce 0.45s cubic-bezier(0.34,1.56,0.64,1); }
+  @keyframes dockBounce {
+    0% { transform: translateY(-8px) scale(1.12); }
+    40% { transform: translateY(-16px) scale(1.28); }
+    100% { transform: translateY(-8px) scale(1.12); }
+  }
+  /* Dock 入场动画 */
+  .dock { animation: dockEntrance 0.7s cubic-bezier(0.34,1.56,0.64,1) both; }
+  @keyframes dockEntrance {
+    from { transform: translateX(-50%) translateY(80px); opacity: 0; }
+    to { transform: translateX(-50%) translateY(0); opacity: 1; }
+  }
   /* 切换桌宠按钮 - 高亮强调 */
   #dockPetSwitch {
     background: linear-gradient(135deg, rgba(255,170,200,0.30), rgba(170,200,255,0.30));
@@ -567,6 +594,8 @@
     transition: left 0.5s cubic-bezier(0.34,1.56,0.64,1), top 0.5s cubic-bezier(0.34,1.56,0.64,1);
     cursor: grab;
     filter: drop-shadow(0 6px 12px rgba(0,0,0,0.35));
+    transform: scale(var(--pet-scale, 1));
+    transform-origin: bottom center;
   }
   .pet-container:active { cursor: grabbing; }
   .pet-container.dragging { cursor: grabbing; z-index: 250; }
@@ -699,9 +728,11 @@
   @keyframes zzzFloat { 0%,100%{transform:translateY(0);opacity:.6} 50%{transform:translateY(-10px);opacity:1} }
   @keyframes petBounce { 0%,100%{transform:scale(1)} 30%{transform:scale(1.12,.88)} 50%{transform:scale(.92,1.08)} 70%{transform:scale(1.04,.96)} }
   @keyframes petJump { 0%{transform:translateY(0)scale(1,1)} 40%{transform:translateY(-35px)scale(1.08,.92)} 60%{transform:translateY(-35px)scale(.95,1.05)} 100%{transform:translateY(0)scale(1,1)} }
+  @keyframes petSpin { 0%{transform:rotate(0deg)} 100%{transform:rotate(720deg)} }
 
   .pet-bouncing { animation: petBounce 0.6s ease; }
   .pet-jumping { animation: petJump 0.7s ease; }
+  .pet-body.spinning { animation: petSpin 0.8s ease-in-out; }
 
   /* ============ SPEECH BUBBLE ============ */
   .speech-bubble {
@@ -808,6 +839,53 @@
   .panel-btn.primary-action:hover { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
   .panel-btn.undo-action { background: rgba(255,255,255,0.08); color: var(--text-primary); }
   .panel-btn.undo-action:hover { background: rgba(255,255,255,0.14); }
+
+  /* ============ RECENT RECORDS ============ */
+  .recent-records { margin-top: 14px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px; }
+  .recent-records-title { font-size: 11px; color: var(--text-secondary); margin-bottom: 8px; letter-spacing: 0.5px; }
+  .recent-records-list { display: flex; flex-direction: column; gap: 6px; max-height: 120px; overflow-y: auto; }
+  .recent-record-item { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--text-secondary); padding: 6px 8px; background: rgba(255,255,255,0.03); border-radius: 6px; }
+  .recent-record-item .rr-time { color: var(--text-secondary); opacity: 0.6; font-size: 10px; flex-shrink: 0; min-width: 38px; }
+  .recent-record-item .rr-summary { color: var(--text-primary); flex: 1; }
+
+  /* ============ RECLASSIFY MENU ============ */
+  .reclassify-menu { position: fixed; z-index: 400; background: rgba(22,22,42,0.96); backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 8px; min-width: 140px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+  .reclassify-menu-title { font-size: 10px; color: var(--text-secondary); padding: 2px 8px 6px; letter-spacing: 0.5px; }
+  .reclassify-menu-item { display: flex; align-items: center; gap: 8px; padding: 7px 10px; font-size: 12px; color: var(--text-primary); border-radius: 6px; cursor: pointer; }
+  .reclassify-menu-item:hover { background: rgba(255,255,255,0.1); }
+  .reclassify-menu-item.current { color: var(--mode-accent); }
+  .file-icon .reclassify-btn { position: absolute; bottom: -2px; right: -2px; z-index: 6; font-size: 9px; padding: 2px 5px; background: rgba(22,22,42,0.9); color: var(--text-secondary); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; cursor: pointer; opacity: 0; transition: opacity 0.2s; }
+  .file-icon:hover .reclassify-btn { opacity: 1; }
+  .file-icon .reclassify-btn:hover { color: var(--mode-accent); border-color: var(--mode-accent); }
+
+  /* ============ SETTINGS POPOVER ============ */
+  .settings-popover {
+    position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%) translateY(12px);
+    z-index: 250; width: 260px; padding: 16px;
+    background: rgba(22,22,42,0.96); backdrop-filter: blur(18px) saturate(140%);
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 16px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+    opacity: 0; visibility: hidden; pointer-events: none;
+    transition: all 0.28s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .settings-popover.open { opacity: 1; visibility: visible; pointer-events: auto; transform: translateX(-50%) translateY(0); }
+  .settings-popover::after {
+    content: ''; position: absolute; bottom: -7px; left: 50%; transform: translateX(-50%) rotate(45deg);
+    width: 12px; height: 12px; background: rgba(22,22,42,0.96);
+    border-right: 1px solid rgba(255,255,255,0.1); border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .settings-title { font-size: 12px; color: var(--text-secondary); margin-bottom: 12px; letter-spacing: 0.5px; }
+  .setting-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .setting-row:last-child { margin-bottom: 0; }
+  .setting-label { font-size: 12.5px; color: var(--text-primary); }
+  .setting-segment { display: flex; background: rgba(255,255,255,0.05); border-radius: 8px; padding: 2px; gap: 2px; }
+  .setting-segment button {
+    border: none; background: transparent; color: var(--text-secondary);
+    font-size: 11px; padding: 5px 10px; border-radius: 6px; cursor: pointer;
+    transition: all 0.2s ease; font-family: inherit;
+  }
+  .setting-segment button:hover { color: var(--text-primary); }
+  .setting-segment button.active { background: var(--mode-accent); color: #fff; font-weight: 600; }
 
   /* ============ TOAST ============ */
   .toast {
@@ -928,6 +1006,7 @@
     <span id="topbarStatus">整洁度 <span class="topbar-clean good" id="statClean">良好</span></span>
     <div class="topbar-bar"><div class="topbar-bar-fill" id="statBar" style="width:60%;"></div></div>
     <span id="desktopFileCount">14 个文件</span>
+    <span id="topbarToday" class="topbar-today">今日 整理 0 · 新增 0</span>
     <span id="topbarTime">--:--</span>
   </div>
 </div>
@@ -991,17 +1070,49 @@
     <button class="panel-btn undo-action" id="undoBtn" style="display:none;">撤销整理</button>
     <button class="panel-btn primary-action" id="organizeBtn">确认整理</button>
   </div>
+  <div class="recent-records" id="recentRecords" style="display:none;">
+    <div class="recent-records-title">最近整理记录</div>
+    <div class="recent-records-list" id="recentRecordsList"></div>
+  </div>
 </div>
 
 <!-- DOCK -->
 <div class="dock" id="dockBar">
-  <div class="dock-icon active" title="桌面"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg></div>
-  <div class="dock-icon" title="文件管理"><svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg></div>
-  <div class="dock-icon" title="已整理"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="18" rx="2"/><polyline points="2 9 9 9 11 7 13 7 15 9 22 9"/></svg></div>
-  <div class="dock-icon" id="dockConfig" title="模式切换"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg></div>
-  <div class="dock-icon" id="dockDownload" title="模拟下载文件到桌面"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>
-  <div class="dock-icon" id="dockPetSwitch" title="切换桌宠"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="12" cy="12" r="3" fill="white"/></svg></div>
-  <div class="dock-icon" title="回收站" id="dockTrash"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></div>
+  <div class="dock-icon active" title="桌面" data-tip="桌面"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg></div>
+  <div class="dock-icon" title="文件管理" data-tip="文件管理"><svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg></div>
+  <div class="dock-icon" title="已整理" data-tip="已整理"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="18" rx="2"/><polyline points="2 9 9 9 11 7 13 7 15 9 22 9"/></svg></div>
+  <div class="dock-icon" id="dockSettings" title="设置" data-tip="设置"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+  <div class="dock-icon" id="dockDownload" title="模拟下载文件到桌面" data-tip="下载文件"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>
+  <div class="dock-icon" id="dockPetSwitch" title="切换桌宠" data-tip="切换桌宠"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="12" cy="12" r="3" fill="white"/></svg></div>
+  <div class="dock-icon" title="回收站" id="dockTrash" data-tip="回收站"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></div>
+</div>
+
+<!-- SETTINGS POPOVER -->
+<div class="settings-popover" id="settingsPopover">
+  <div class="settings-title">设置</div>
+  <div class="setting-row">
+    <span class="setting-label">桌宠大小</span>
+    <div class="setting-segment" id="petSizeSegment">
+      <button data-size="small">小</button>
+      <button data-size="medium" class="active">中</button>
+      <button data-size="large">大</button>
+    </div>
+  </div>
+  <div class="setting-row">
+    <span class="setting-label">散步频率</span>
+    <div class="setting-segment" id="walkFreqSegment">
+      <button data-freq="quiet">安静</button>
+      <button data-freq="normal" class="active">正常</button>
+      <button data-freq="active">活泼</button>
+    </div>
+  </div>
+  <div class="setting-row">
+    <span class="setting-label">整理后面板</span>
+    <div class="setting-segment" id="autoCloseSegment">
+      <button data-autoclose="off">手动关</button>
+      <button data-autoclose="on" class="active">自动收起</button>
+    </div>
+  </div>
 </div>
 
 <!-- PET -->
@@ -1036,6 +1147,12 @@
     </div>
     <div class="group-expand-body" id="groupExpandBody"></div>
   </div>
+</div>
+
+<!-- RECLASSIFY MENU（误判修正：换个分类） -->
+<div class="reclassify-menu" id="reclassifyMenu" style="display:none;">
+  <div class="reclassify-menu-title">换个分类</div>
+  <div class="reclassify-menu-list" id="reclassifyMenuList"></div>
 </div>
 
 <script>
@@ -1133,6 +1250,84 @@ dockPetSwitch.addEventListener('click', openPetSwitcher);
 petSwitcherClose.addEventListener('click', closePetSwitcher);
 petSwitcherModal.addEventListener('click', (e) => { if (e.target === petSwitcherModal) closePetSwitcher(); });
 
+// ============ 设置弹出层 ============
+const dockSettings = document.getElementById('dockSettings');
+const settingsPopover = document.getElementById('settingsPopover');
+const settingsState = { petSize: 'medium', walkFreq: 'normal', autoClose: 'on' };
+const PET_SIZE_SCALE = { small: 0.78, medium: 1.0, large: 1.3 };
+const WALK_FREQ_INTERVAL = { quiet: [10000, 25000], normal: [5000, 12000], active: [2500, 6000] };
+
+function toggleSettings() {
+  settingsPopover.classList.toggle('open');
+}
+dockSettings.addEventListener('click', (e) => { e.stopPropagation(); toggleSettings(); });
+document.addEventListener('click', (e) => {
+  if (!settingsPopover.classList.contains('open')) return;
+  if (!settingsPopover.contains(e.target) && e.target !== dockSettings) settingsPopover.classList.remove('open');
+});
+
+function applyPetSize(size) {
+  settingsState.petSize = size;
+  document.documentElement.style.setProperty('--pet-scale', PET_SIZE_SCALE[size]);
+  try { localStorage.setItem('petSize', size); } catch(e) {}
+}
+function applyWalkFreq(freq) {
+  settingsState.walkFreq = freq;
+  try { localStorage.setItem('walkFreq', freq); } catch(e) {}
+  scheduleWalk(); // 用新间隔重新排程
+}
+function applyAutoClose(val) {
+  settingsState.autoClose = val;
+  try { localStorage.setItem('autoClose', val); } catch(e) {}
+}
+
+// 分段按钮通用处理
+function bindSegment(containerId, attr, applyFn) {
+  const seg = document.getElementById(containerId);
+  seg.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      seg.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      applyFn(btn.dataset[attr]);
+    });
+  });
+}
+bindSegment('petSizeSegment', 'size', applyPetSize);
+bindSegment('walkFreqSegment', 'freq', applyWalkFreq);
+bindSegment('autoCloseSegment', 'autoclose', applyAutoClose);
+
+// 恢复保存的设置（仅设状态与 CSS，不触发 scheduleWalk——此时相关变量尚未声明）
+(function restoreSettings() {
+  try {
+    const ps = localStorage.getItem('petSize');
+    const wf = localStorage.getItem('walkFreq');
+    const ac = localStorage.getItem('autoClose');
+    if (ps && PET_SIZE_SCALE[ps]) {
+      settingsState.petSize = ps;
+      document.documentElement.style.setProperty('--pet-scale', PET_SIZE_SCALE[ps]);
+      document.querySelectorAll('#petSizeSegment button').forEach(b => b.classList.toggle('active', b.dataset.size === ps));
+    }
+    if (wf && WALK_FREQ_INTERVAL[wf]) {
+      settingsState.walkFreq = wf;
+      document.querySelectorAll('#walkFreqSegment button').forEach(b => b.classList.toggle('active', b.dataset.freq === wf));
+    }
+    if (ac) {
+      settingsState.autoClose = ac;
+      document.querySelectorAll('#autoCloseSegment button').forEach(b => b.classList.toggle('active', b.dataset.autoclose === ac));
+    }
+  } catch(e) {}
+})();
+
+// Dock 图标点击弹跳动画
+document.querySelectorAll('.dock-icon').forEach(icon => {
+  icon.addEventListener('click', () => {
+    icon.classList.remove('bouncing');
+    void icon.offsetWidth; // 重置动画
+    icon.classList.add('bouncing');
+    setTimeout(() => icon.classList.remove('bouncing'), 460);
+  });
+});
+
 // 点击宠物卡片切换
 document.querySelectorAll('.pet-card').forEach(card => {
   card.addEventListener('click', () => {
@@ -1216,6 +1411,15 @@ const FILE_TYPE_META = {
   shortcut:   { label:'快捷方式', emoji:'🔗', color:'#9895aa', group:'group-temp', catName:'其他文件', iconSvg:FILE_SVG.shortcut },
 };
 
+// 收纳区标签映射（用于重分类菜单显示；运行时从 DOM 读取以支持重命名）
+function getGroupLabel(gid) {
+  const el = document.querySelector(`#${gid} .file-group-label`);
+  return el ? el.textContent.trim() : gid;
+}
+// 文件所属收纳区（支持 manualGroup 覆盖，用于误判修正）
+function getFileGroup(f) { return f.manualGroup || FILE_TYPE_META[f.type].group; }
+const ALL_GROUP_IDS = ['group-screenshot','group-doc','group-archive','group-installer','group-video','group-temp'];
+
 // ============ SHARED DESKTOP FILES ============
 // 方向 C：三种模式共享同一份桌面文件，模式只影响整理优先级与桌宠表现
 const SHARED_FILES = [
@@ -1265,6 +1469,11 @@ let organizedFiles = [];
 let petInteractCount = 0;
 let draggedFileId = null;
 let pinnedShortcuts = [];
+// 今日统计（页面级，刷新重置）
+let todayOrganized = 0;
+let todayNewFiles = 0;
+// 最近整理记录 [{time, summary}]
+let organizeRecords = [];
 
 
 const MODE_CONFIG = {
@@ -1294,6 +1503,8 @@ const organizePanel = document.getElementById('organizePanel');
 const categoryList = document.getElementById('categoryList');
 const organizeBtn = document.getElementById('organizeBtn');
 const undoBtn = document.getElementById('undoBtn');
+const recentRecords = document.getElementById('recentRecords');
+const recentRecordsList = document.getElementById('recentRecordsList');
 const panelClose = document.getElementById('panelClose');
 const speechBubble = document.getElementById('speechBubble');
 const bubbleText = document.getElementById('bubbleText');
@@ -1306,6 +1517,7 @@ const dockBar = document.getElementById('dockBar');
 const dockTrash = document.getElementById('dockTrash');
 const statClean = document.getElementById('statClean');
 const statBar = document.getElementById('statBar');
+const topbarToday = document.getElementById('topbarToday');
 
 // ============ HELPERS ============
 function debounce(fn,ms) { let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),ms); }; }
@@ -1336,37 +1548,79 @@ function flashPetState(state, duration=1000, thenState='idle') {
   setPetState(state);
   setTimeout(() => {
     if (currentPetState === state) {
-      setPetState(petSleeping ? 'wait' : thenState);
+      if (petSleeping) setPetState('wait');
+      else if (thenState !== 'idle') setPetState(thenState);
+      else applyBaseMood();
     }
   }, duration);
+}
+
+// 基础情绪 → 精灵图状态：桌面乱时不切状态（避免精灵图持续闪烁），改用气泡表达关心
+function moodShapeToState(shape) {
+  return 'idle';
+}
+
+// 临时反应 → 精灵图状态（用于互动瞬间的短暂表情，属于"动作"）
+function reactionState(shape) {
+  if (shape === 'wow') return 'review';
+  if (shape === 'sad') return 'busy';
+  return 'idle';
 }
 
 function setPetMouth(shape) {
-  // 精灵图方案下，情绪由动画状态表达，此处保留空函数避免调用报错
+  // 基础情绪：互动覆盖期、睡眠、走路/挥手/跳跃进行中时不打断
+  if (Date.now() < petMoodOverrideUntil) return;
+  if (petSleeping) return;
+  if (['run-right','run-left','wave','jump'].includes(currentPetState)) return;
+  setPetState(moodShapeToState(shape));
 }
 
-// 互动触发的临时嘴形，duration 后自动恢复到 mood basis
+// 互动结束后回到基础情绪
+function applyBaseMood() {
+  if (petSleeping) { setPetState('wait'); return; }
+  setPetState(moodShapeToState(currentMoodShape));
+}
+
+// 互动触发的临时反应，duration 后自动恢复到 idle
 function flashPetMouth(shape, duration=800) {
   petMoodOverrideUntil = Date.now() + duration;
-  setPetMouth(shape);
+  setPetState(reactionState(shape));
   setTimeout(() => {
     if (Date.now() >= petMoodOverrideUntil - 50) {
-      setPetMouth(currentMoodShape);
       petMoodOverrideUntil = 0;
+      applyBaseMood();
     }
   }, duration);
 }
 
-// 根据整洁度更新桌宠情绪（不覆盖进行中的互动效果）
+// 桌面变乱时的关心气泡（带冷却，不刷屏）
+let lastMessyBubbleAt = 0;
+const MESSY_BUBBLE_MESSAGES = [
+  '桌面有点乱了呢…要帮你整理一下吗？',
+  '唔，文件越堆越多了，需要我出手吗？',
+  '稍微收拾一下会更舒服哦！点「看看整理方案」吧~',
+  '看我把这些文件收纳得整整齐齐~ 要试试吗？',
+];
+
+// 根据整洁度更新桌宠情绪（不打断进行中的互动效果）
 function updatePetMood(tidyPercent) {
   let shape;
   if (tidyPercent >= 80) shape = 'happy';
   else if (tidyPercent >= 55) shape = '';
   else if (tidyPercent >= 40) shape = 'wow';
   else shape = 'sad';
+  const prev = currentMoodShape;
   currentMoodShape = shape;
-  if (Date.now() >= petMoodOverrideUntil) {
-    setPetMouth(shape);
+  setPetMouth(shape);
+  // 桌面变乱时偶尔气泡提醒（不打断面板/睡眠/已有气泡）
+  if ((shape === 'wow' || shape === 'sad') && prev !== shape) {
+    const now = Date.now();
+    if (now - lastMessyBubbleAt > 30000 && !isPanelOpen && !petSleeping) {
+      lastMessyBubbleAt = now;
+      const msg = MESSY_BUBBLE_MESSAGES[Math.floor(Math.random() * MESSY_BUBBLE_MESSAGES.length)];
+      showBubble(msg);
+      setTimeout(() => { if (!isPanelOpen) hideBubble(); }, 4000);
+    }
   }
 }
 
@@ -1428,6 +1682,7 @@ function updateStatusCard() {
   statBar.style.width = barPercent + '%';
   statClean.textContent = isOrganized ? '整洁' : (fc <= 10 ? '良好' : '需整理');
   statClean.className = 'topbar-clean ' + (isOrganized || fc <= 10 ? 'good' : 'warn');
+  topbarToday.textContent = `今日 整理 ${todayOrganized} · 新增 ${todayNewFiles}`;
   // 桌宠情绪跟随整洁度
   updatePetMood(barPercent);
 }
@@ -1712,11 +1967,11 @@ function applyGroupLayout(align) {
   document.querySelectorAll('.file-icon').forEach(el => {
     const file = currentFiles.find(f => f.id === el.dataset.fileId);
     if (!file) return;
-    const gid = FILE_TYPE_META[file.type].group;
+    const gid = getFileGroup(file);
     const gi = GROUP_ORDER.indexOf(gid);
     if (gi < 0) return;
-    if (typeIdx[file.type] === undefined) typeIdx[file.type] = 0;
-    const idx = typeIdx[file.type]++;
+    if (typeIdx[gid] === undefined) typeIdx[gid] = 0;
+    const idx = typeIdx[gid]++;
     // 坐标相对 group（图标在 group DOM 内）
     el.style.left = (GROUP_ICON_OFFSET_X + (idx % GROUP_ICONS_PER_ROW) * GROUP_ICON_COL_W) + 'px';
     el.style.top  = (GROUP_ICON_OFFSET_Y + Math.floor(idx / GROUP_ICONS_PER_ROW) * GROUP_ICON_ROW_H) + 'px';
@@ -1732,7 +1987,7 @@ function applyGroupLayout(align) {
 function updateGroupBadges() {
   const counts = {};
   currentFiles.forEach(f => {
-    const gid = FILE_TYPE_META[f.type].group;
+    const gid = getFileGroup(f);
     counts[gid] = (counts[gid] || 0) + 1;
   });
   GROUP_ORDER.forEach(gid => {
@@ -1760,7 +2015,7 @@ function openGroupExpand(gid) {
   const groupEl = document.getElementById(gid);
   if (!groupEl) return;
   const label = groupEl.querySelector('.file-group-label')?.textContent || '收纳区';
-  const files = currentFiles.filter(f => FILE_TYPE_META[f.type].group === gid);
+  const files = currentFiles.filter(f => getFileGroup(f) === gid);
 
   groupExpandTitle.textContent = label;
   groupExpandCount.textContent  = files.length ? `共 ${files.length} 个文件` : '暂无文件';
@@ -1775,16 +2030,81 @@ function openGroupExpand(gid) {
       // 展开面板内的图标禁用拖拽，避免误操作
       icon.draggable = false;
       icon.removeAttribute('draggable');
+      // 误判修正入口：hover 显示「换分类」按钮
+      const btn = document.createElement('button');
+      btn.className = 'reclassify-btn';
+      btn.textContent = '换分类';
+      btn.title = '这个分类不对？换个分类';
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openReclassifyMenu(file, btn);
+      });
+      icon.appendChild(btn);
       groupExpandBody.appendChild(icon);
     });
   }
 
+  groupExpandOverlay.dataset.currentGid = gid;
   groupExpandOverlay.classList.add('show');
 }
 
 function closeGroupExpand() {
   groupExpandOverlay.classList.remove('show');
   groupExpandBody.innerHTML = '';
+  closeReclassifyMenu();
+}
+
+// 误判修正：换个分类
+const reclassifyMenu = document.getElementById('reclassifyMenu');
+const reclassifyMenuList = document.getElementById('reclassifyMenuList');
+let reclassifyTargetFileId = null;
+
+function openReclassifyMenu(file, anchorEl) {
+  reclassifyTargetFileId = file.id;
+  const currentGid = getFileGroup(file);
+  reclassifyMenuList.innerHTML = ALL_GROUP_IDS.map(gid => {
+    const isCurrent = gid === currentGid;
+    return `<div class="reclassify-menu-item ${isCurrent ? 'current' : ''}" data-gid="${gid}">${getGroupLabel(gid)}${isCurrent ? ' ✓' : ''}</div>`;
+  }).join('');
+  reclassifyMenuList.querySelectorAll('.reclassify-menu-item').forEach(item => {
+    item.addEventListener('click', () => {
+      reclassifyFile(file.id, item.dataset.gid);
+      closeReclassifyMenu();
+    });
+  });
+  const rect = anchorEl.getBoundingClientRect();
+  reclassifyMenu.style.display = '';
+  const menuW = reclassifyMenu.offsetWidth;
+  let left = rect.right - menuW;
+  let top = rect.bottom + 4;
+  if (top + 200 > window.innerHeight) top = rect.top - 200;
+  if (left < 8) left = 8;
+  reclassifyMenu.style.left = left + 'px';
+  reclassifyMenu.style.top = top + 'px';
+}
+function closeReclassifyMenu() {
+  reclassifyMenu.style.display = 'none';
+  reclassifyTargetFileId = null;
+}
+document.addEventListener('click', (e) => {
+  if (reclassifyMenu.style.display === 'none') return;
+  if (!reclassifyMenu.contains(e.target) && !e.target.classList.contains('reclassify-btn')) {
+    closeReclassifyMenu();
+  }
+});
+function reclassifyFile(fileId, newGroupId) {
+  const f = currentFiles.find(x => x.id === fileId);
+  if (!f) return;
+  const oldGid = getFileGroup(f);
+  if (oldGid === newGroupId) return;
+  f.manualGroup = newGroupId;
+  if (isOrganized) {
+    applyGroupLayout(groupLayoutAlign);
+    updateGroupBadges();
+  }
+  const cur = groupExpandOverlay.dataset.currentGid;
+  if (cur) openGroupExpand(cur);
+  showToast(`已将「${f.name}」移至「${getGroupLabel(newGroupId)}」`, '🔄');
 }
 
 // 点击 +N 角标展开
@@ -1794,12 +2114,47 @@ document.querySelectorAll('.file-group-more').forEach(badge => {
     openGroupExpand(badge.dataset.group);
   });
 });
-// 点击 group 标题也可展开（更易发现）
+// 点击 group 标题展开；双击重命名（用 220ms 延迟区分单击/双击）
+let labelClickTimer = null;
+function startRenameLabel(label) {
+  const oldText = label.textContent.trim();
+  label.contentEditable = 'true';
+  label.classList.add('editing');
+  label.focus();
+  const range = document.createRange();
+  range.selectNodeContents(label);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+  const finish = () => {
+    label.contentEditable = 'false';
+    label.classList.remove('editing');
+    const newText = label.textContent.trim() || oldText;
+    label.textContent = newText;
+    label.removeEventListener('blur', finish);
+    label.removeEventListener('keydown', onKey);
+  };
+  const onKey = (ev) => {
+    if (ev.key === 'Enter') { ev.preventDefault(); label.blur(); }
+    if (ev.key === 'Escape') { label.textContent = oldText; label.blur(); }
+  };
+  label.addEventListener('blur', finish);
+  label.addEventListener('keydown', onKey);
+}
 document.querySelectorAll('.file-group-label').forEach(label => {
+  label.title = '单击展开 · 双击重命名';
   label.addEventListener('click', (e) => {
     e.stopPropagation();
-    const gid = label.parentElement.id;
-    openGroupExpand(gid);
+    if (labelClickTimer) return;
+    labelClickTimer = setTimeout(() => {
+      labelClickTimer = null;
+      openGroupExpand(label.parentElement.id);
+    }, 220);
+  });
+  label.addEventListener('dblclick', (e) => {
+    e.stopPropagation();
+    if (labelClickTimer) { clearTimeout(labelClickTimer); labelClickTimer = null; }
+    startRenameLabel(label);
   });
 });
 // 关闭：关闭按钮 / 点击遮罩
@@ -1875,10 +2230,26 @@ function renderAISuggestion() {
   forecast.innerHTML = `${doneText}整洁度 <strong>${isOrganized ? 92 : currentTidy}%${isOrganized ? '' : ' → 92%'}</strong>${isOrganized ? '' : '，桌宠会开心哦~'}<br><span style="color:var(--mode-accent)">🎯 ${cfg.priorityHint}</span>`;
 }
 
+// 最近整理记录
+function addRecentRecord(summary) {
+  const now = new Date();
+  const time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+  organizeRecords.unshift({ time, summary });
+  if (organizeRecords.length > 10) organizeRecords.pop();
+}
+function renderRecentRecords() {
+  if (!organizeRecords.length) { recentRecords.style.display = 'none'; return; }
+  recentRecords.style.display = '';
+  recentRecordsList.innerHTML = organizeRecords.map(r =>
+    `<div class="recent-record-item"><span class="rr-time">${r.time}</span><span class="rr-summary">${r.summary}</span></div>`
+  ).join('');
+}
+
 function openOrganizePanel() {
   hideBubble();
   renderCategoryPanel();
   renderAISuggestion();
+  renderRecentRecords();
   organizePanel.classList.add('open');
   isPanelOpen = true;
   organizeBtn.style.display = '';
@@ -1902,10 +2273,15 @@ function doOrganize() {
 
   // 先标记已整理，applyGroupLayout 内部依赖此状态才会摆放容器和图标
   isOrganized = true;
+  todayOrganized++;
 
   // 统一尺寸布局：容器固定 220×170，图标按 3×N 网格堆叠（超出 6 个隐藏，由 +N 角标替代）
   updateGroupBadges();                       // 设置 +N 角标
   applyGroupLayout(groupLayoutAlign);       // 摆放容器和图标
+
+  // 记录本次整理摘要
+  const groupCount = document.querySelectorAll('.file-group.show').length;
+  addRecentRecord(`收纳 ${currentFiles.length} 个文件 → ${groupCount} 个分区`);
 
   organizeBtn.textContent = '已整理 ✓';
   organizeBtn.disabled = true;
@@ -1914,8 +2290,9 @@ function doOrganize() {
   updateStatusCard();
 
   setTimeout(() => {
-    closeOrganizePanel();
+    if (settingsState.autoClose === 'on') closeOrganizePanel();
     petCelebrate();
+    setTimeout(() => { if (!isPanelOpen && !petSleeping) petSpin(); }, 750);
     const cfg = MODE_CONFIG[currentMode];
     showBubble(cfg.organizeDone + ' 如果想恢复，随时可以撤销哦');
     setTimeout(() => { if (!isPanelOpen) hideBubble(); }, 3500);
@@ -1987,6 +2364,7 @@ dockDownload.addEventListener('click', () => {
   // 共享文件集：所有模式都会看到这个新文件
   currentFiles.push(newFile);
   SHARED_FILES.push(newFile);
+  todayNewFiles++;
 
   // 若整理面板开着，先关掉让用户看到新文件落位
   if (isPanelOpen) closeOrganizePanel();
@@ -2005,7 +2383,14 @@ dockDownload.addEventListener('click', () => {
   const t = FILE_TYPE_META[newFile.type];
   const cfg = MODE_CONFIG[currentMode];
   showToast(`「${newFile.name}」已下载到桌面 · 自动识别为${t.label}`, '⬇️');
-  flashPetMouth('wow', 1000);
+  // 桌宠偷看新文件：朝文件方向瞥一眼
+  const newIcon = document.querySelector(`.file-icon[data-file-id="${newFile.id}"]`);
+  if (newIcon) {
+    const r = newIcon.getBoundingClientRect();
+    petPeekAt(r.left + r.width / 2);
+  } else {
+    flashPetMouth('wow', 1000);
+  }
   showBubble(`新文件来啦~「${newFile.name}」我识别为${t.label}类，整理时会归到「${t.catName}」区哦！`, [
     { label: '看看整理方案', primary: true, handler: openOrganizePanel },
     { label: '稍后再说', primary: false, handler: hideBubble },
@@ -2126,8 +2511,7 @@ function resetIdleTimer() {
 function scheduleWalk() {
   clearTimeout(petWalkTimer);
   if (petSleeping || petDragActive) return;
-  const cfg = MODE_CONFIG[currentMode];
-  const [min, max] = cfg ? cfg.walkInterval : [5000, 15000];
+  const [min, max] = WALK_FREQ_INTERVAL[settingsState.walkFreq] || [5000, 12000];
   petWalkTimer = setTimeout(doWalk, min + Math.random() * (max - min));
 }
 
@@ -2148,8 +2532,17 @@ function doWalk() {
   const area = document.getElementById('desktopArea');
   const aw = area.clientWidth - 100;
   const ah = area.clientHeight - 100;
-  const tx = 40 + Math.random() * aw;
-  const ty = 40 + Math.random() * ah;
+  let tx = 40 + Math.random() * aw;
+  let ty = 40 + Math.random() * ah;
+  let nudgeDock = false;
+  // 25% 概率蹭到 Dock 边待一会儿
+  if (Math.random() < 0.25) {
+    const dock = document.getElementById('dockBar');
+    const dr = dock.getBoundingClientRect();
+    tx = Math.max(60, Math.min(dr.left + dr.width / 2, window.innerWidth - 60));
+    ty = Math.max(40, dr.top - 100);
+    nudgeDock = true;
+  }
 
   // 先锁定到旧位置（首次走时把 bottom/right 换算成 left/top，避免瞬移）
   const old = getPetPos();
@@ -2172,7 +2565,9 @@ function doWalk() {
     petContainer.style.top = ty + 'px';
   });
   setTimeout(() => {
-    setPetState(petSleeping ? 'wait' : 'idle');
+    if (petSleeping) setPetState('wait');
+    else if (nudgeDock) { flashPetState('wave', 1200); } // 蹭一下 Dock
+    else applyBaseMood();
     petContainer.style.transition = '';
     scheduleWalk();
   }, dur);
@@ -2190,7 +2585,7 @@ function startSleeping() {
    if (!petSleeping) return;
    petSleeping = false;
    petBody.classList.remove('sleeping');
-   setPetState('idle');
+   applyBaseMood();
    petZzz.classList.remove('show');
  }
 
@@ -2200,6 +2595,26 @@ function startSleeping() {
    spawnSparkles(6);
    resetIdleTimer();
  }
+
+// 整理完成转圈庆祝
+function petSpin() {
+  wakeUpPet();
+  petBody.classList.add('spinning');
+  spawnSparkles(4);
+  setTimeout(() => {
+    petBody.classList.remove('spinning');
+    applyBaseMood();
+  }, 800);
+  resetIdleTimer();
+}
+
+// 新文件偷看：朝目标方向短暂 review
+function petPeekAt(targetX) {
+  const old = getPetPos();
+  const dir = targetX > old.x ? 'run-right' : 'run-left';
+  flashPetState(dir, 400, 'review');
+  setTimeout(() => flashPetState('review', 1000), 400);
+}
 
 function spawnSparkles(count) {
   const c = document.getElementById('petContainer');
